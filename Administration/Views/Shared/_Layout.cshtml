@@ -21,12 +21,13 @@
             width: 260px;
             height: 100vh;
             position: fixed;
-            background: linear-gradient(180deg, #0f172a, #020617);
-            color: white;
-            transition: 0.3s;
+            background: #1e293b;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
             z-index: 1000;
+            overflow-x: hidden;
         }
 
         .sidebar.collapsed {
@@ -34,140 +35,214 @@
         }
 
         .sidebar-brand {
-            padding: 20px;
-            font-size: 20px;
-            font-weight: bold;
-            text-align: center;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             white-space: nowrap;
             overflow: hidden;
         }
 
-        .sidebar.collapsed .sidebar-brand {
-            padding: 20px 10px;
-            font-size: 16px;
+        .sidebar-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
-        .sidebar-brand span {
-            color: #4f6ef7;
+        .sidebar-brand-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8fafc;
+            transition: opacity 0.3s;
         }
 
-        .sidebar.collapsed .sidebar-brand span {
-            display: none;
+        .sidebar.collapsed .sidebar-brand-text {
+            opacity: 0;
+            width: 0;
         }
 
         .nav-section-label {
-            color: #94a3b8;
-            font-size: 12px;
-            padding: 10px 20px 5px;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 20px 24px 10px;
             white-space: nowrap;
             overflow: hidden;
-            transition: 0.3s;
+            transition: opacity 0.3s;
         }
 
         .sidebar.collapsed .nav-section-label {
-            padding: 10px 10px 5px;
+            opacity: 0;
+            padding: 10px 0;
             text-align: center;
-            font-size: 10px;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 20px;
-            color: #cbd5f5;
+            gap: 12px;
+            padding: 12px 24px;
+            color: #94a3b8;
             text-decoration: none;
-            border-radius: 10px;
-            margin: 5px 10px;
-            transition: 0.3s;
+            transition: all 0.2s;
             white-space: nowrap;
             overflow: hidden;
+            position: relative;
+            margin: 2px 12px;
+            border-radius: 8px;
         }
 
         .sidebar.collapsed .nav-item {
-            padding: 12px 10px;
+            padding: 12px;
             justify-content: center;
-        }
-
-        /* Masquer le texte des liens quand la sidebar est réduite */
-        .sidebar.collapsed .nav-item span {
-            display: none;
-        }
-
-        .nav-item:hover {
-            background: rgba(79, 110, 247, 0.2);
-            color: #fff;
-        }
-
-        .nav-item.active {
-            background: #4f6ef7;
-            color: white;
-            font-weight: 600;
+            margin: 2px 8px;
         }
 
         .nav-item i {
             font-size: 18px;
-            min-width: 24px;
+            min-width: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        .sidebar.collapsed .nav-item span {
+            opacity: 0;
+            width: 0;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: #f8fafc;
+        }
+
+        .nav-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            font-weight: 600;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: #8b5cf6;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .nav-item-dropdown {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-item-dropdown i:last-child {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed .nav-item-dropdown i:last-child {
+            display: none;
         }
 
         /* ===== TOGGLE BUTTON ===== */
         .sidebar-toggle {
             position: absolute;
-            top: 15px;
-            right: -15px;
-            width: 30px;
-            height: 30px;
-            background: #4f6ef7;
+            top: 20px;
+            right: -12px;
+            width: 24px;
+            height: 24px;
+            background: #8b5cf6;
             border: none;
-            border-radius: 50%;
+            border-radius: 6px;
             color: white;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: 0.3s;
+            transition: all 0.3s;
             z-index: 1001;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
         }
 
         .sidebar-toggle:hover {
-            background: #3b5bdb;
-            transform: rotate(180deg);
+            background: #7c3aed;
+            transform: scale(1.1);
         }
 
         .sidebar.collapsed .sidebar-toggle {
-            right: -15px;
+            transform: rotate(180deg);
         }
 
         /* ===== USER ===== */
         .sidebar-user {
             margin-top: auto;
-            padding: 15px;
+            padding: 16px 24px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             border-top: 1px solid rgba(255,255,255,0.1);
-            transition: 0.3s;
+            transition: all 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
         .sidebar.collapsed .sidebar-user {
-            padding: 15px 10px;
+            padding: 16px 12px;
             justify-content: center;
-        }
-
-        .sidebar.collapsed .sidebar-user-info {
-            display: none;
         }
 
         .sidebar-user-avatar {
-            width: 40px;
-            height: 40px;
-            background: #4f6ef7;
-            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 14px;
+            color: white;
             flex-shrink: 0;
+        }
+
+        .sidebar-user-info {
+            transition: opacity 0.3s;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed .sidebar-user-info {
+            opacity: 0;
+            width: 0;
+        }
+
+        .sidebar-user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .sidebar-user-role {
+            font-size: 12px;
+            color: #64748b;
         }
 
         /* ===== MAIN ===== */
@@ -176,7 +251,7 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            transition: 0.3s;
+            transition: margin-left 0.3s ease;
         }
 
         .layout-main.expanded {
@@ -187,63 +262,62 @@
         .topbar {
             height: 70px;
             background: white;
-            padding: 0 20px;
+            padding: 0 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .topbar h1 {
-            font-size: 18px;
+            font-size: 20px;
+            font-weight: 700;
             margin: 0;
+            color: #1e293b;
         }
 
         .topbar-search input {
-            border-radius: 10px;
-            padding: 8px 12px;
+            border-radius: 8px;
+            padding: 8px 16px;
             border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            width: 300px;
         }
 
         .topbar-user-avatar {
-            width: 35px;
-            height: 35px;
-            background: #4f6ef7;
-            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .topbar-user-avatar:hover {
+            transform: scale(1.05);
         }
 
         /* ===== CONTENT ===== */
         .page-content {
-            padding: 25px;
+            padding: 32px;
             background: #f8fafc;
             flex: 1;
         }
 
         /* ===== FOOTER ===== */
         .footer {
-            padding: 15px 25px;
+            padding: 20px 32px;
             background: white;
             border-top: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
-        }
-
-        /* ===== CARDS ===== */
-        .card {
-            border-radius: 15px;
-            border: none;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-            transition: 0.3s;
-        }
-
-        .card:hover {
-            transform: translateY(-3px);
+            color: #64748b;
+            font-size: 14px;
         }
 
         /* ===== RESPONSIVE ===== */
@@ -259,6 +333,28 @@
             .layout-main {
                 margin-left: 0;
             }
+
+            .topbar-search input {
+                width: 200px;
+            }
+        }
+
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.2);
         }
     </style>
 
@@ -279,7 +375,10 @@
     </button>
 
     <div class="sidebar-brand">
-        Admin<span>Pro</span>
+        <div class="sidebar-brand-icon">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+        </div>
+        <div class="sidebar-brand-text">xintra</div>
     </div>
 
     <!-- ADMIN -->
@@ -288,29 +387,34 @@
         <div class="nav-section-label">Principal</div>
 
         <a asp-controller="Admin" asp-action="Dashboard" class="nav-item">
-            <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+            <i class="bi bi-speedometer2"></i> 
+            <span>Dashboard</span>
         </a>
 
         <div class="nav-section-label">Gestion Utilisateurs</div>
 
         <a asp-controller="Admin" asp-action="Users" class="nav-item">
-            <i class="bi bi-people"></i> <span>Utilisateurs</span>
+            <i class="bi bi-people"></i> 
+            <span>Utilisateurs</span>
         </a>
 
         <a asp-controller="Admin" asp-action="CreateUser" class="nav-item">
-            <i class="bi bi-person-plus"></i> <span>Créer utilisateur</span>
+            <i class="bi bi-person-plus"></i> 
+            <span>Créer utilisateur</span>
         </a>
 
         <div class="nav-section-label">Gestion Postes</div>
 
         <a asp-controller="Admin" asp-action="Postes" class="nav-item">
-            <i class="bi bi-briefcase"></i> <span>Postes</span>
+            <i class="bi bi-briefcase"></i> 
+            <span>Postes</span>
         </a>
 
         <div class="nav-section-label">Autres</div>
 
         <a asp-controller="Admin" asp-action="Profile" class="nav-item">
-            <i class="bi bi-person-circle"></i> <span>Profil</span>
+            <i class="bi bi-person-circle"></i> 
+            <span>Profil</span>
         </a>
     }
 
@@ -320,23 +424,27 @@
         <div class="nav-section-label">Principal</div>
 
         <a asp-controller="RH" asp-action="Dashboard" class="nav-item">
-            <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+            <i class="bi bi-speedometer2"></i> 
+            <span>Dashboard</span>
         </a>
 
         <div class="nav-section-label">Gestion Postes</div>
 
         <a asp-controller="RH" asp-action="Postes" class="nav-item">
-            <i class="bi bi-briefcase"></i> <span>Postes</span>
+            <i class="bi bi-briefcase"></i> 
+            <span>Postes</span>
         </a>
 
         <a asp-controller="RH" asp-action="CreatePoste" class="nav-item">
-            <i class="bi bi-plus-circle"></i> <span>Créer poste</span>
+            <i class="bi bi-plus-circle"></i> 
+            <span>Créer poste</span>
         </a>
 
         <div class="nav-section-label">Compte</div>
 
         <a asp-controller="RH" asp-action="Profile" class="nav-item">
-            <i class="bi bi-person-circle"></i> <span>Profil</span>
+            <i class="bi bi-person-circle"></i> 
+            <span>Profil</span>
         </a>
     }
 
@@ -346,25 +454,29 @@
         <div class="nav-section-label">Principal</div>
 
         <a asp-controller="DirecteurDepartement" asp-action="Dashboard" class="nav-item">
-            <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+            <i class="bi bi-speedometer2"></i> 
+            <span>Dashboard</span>
         </a>
 
         <div class="nav-section-label">Candidatures</div>
 
-        <!-- Correction : l'action 'ResultatsCV' existe dans le contrôleur -->
         <a asp-controller="DirecteurDepartement" asp-action="ResultatsCV" class="nav-item">
-            <i class="bi bi-file-earmark-text"></i> <span>CV de chaque poste</span>
+            <i class="bi bi-file-earmark-text"></i> 
+            <span>CV de chaque poste</span>
         </a>
+        
         <div class="nav-section-label">Gestion Postes</div>
 
         <a asp-controller="DirecteurDepartement" asp-action="Postes" class="nav-item">
-            <i class="bi bi-briefcase"></i> <span>Postes</span>
+            <i class="bi bi-briefcase"></i> 
+            <span>Postes</span>
         </a>
 
         <div class="nav-section-label">Compte</div>
 
         <a asp-controller="DirecteurDepartement" asp-action="Profile" class="nav-item">
-            <i class="bi bi-person-circle"></i> <span>Profil</span>
+            <i class="bi bi-person-circle"></i> 
+            <span>Profil</span>
         </a>
     }
 
@@ -372,8 +484,8 @@
     <div class="sidebar-user">
         <div class="sidebar-user-avatar">@initials</div>
         <div class="sidebar-user-info">
-            <div>@userName</div>
-            <small class="text-muted">@userRole</small>
+            <div class="sidebar-user-name">@userName</div>
+            <div class="sidebar-user-role">@userRole</div>
         </div>
     </div>
 
@@ -383,33 +495,37 @@
 
     <!-- TOPBAR -->
     <header class="topbar">
-        <button class="btn btn-link d-md-none" onclick="toggleMobileSidebar()">
+        <button class="btn btn-link d-md-none text-dark" onclick="toggleMobileSidebar()">
             <i class="bi bi-list fs-4"></i>
         </button>
 
         <h1>@ViewData["Title"]</h1>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <div class="topbar-search d-none d-md-block">
+                <input type="text" placeholder="Rechercher..." />
+            </div>
+            
             <!-- Dropdown de l'avatar -->
             <div class="dropdown">
                 <div class="topbar-user-avatar" data-bs-toggle="dropdown" aria-expanded="false">
                     @initials
                 </div>
-                <ul class="dropdown-menu dropdown-menu-end">
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                     @if (userRole == "Admin")
                     {
-                        <li><a class="dropdown-item" asp-controller="Admin" asp-action="Profile">Mon profil</a></li>
+                        <li><a class="dropdown-item py-2" asp-controller="Admin" asp-action="Profile">Mon profil</a></li>
                     }
                     else if (userRole == "RH")
                     {
-                        <li><a class="dropdown-item" asp-controller="RH" asp-action="Profile">Mon profil</a></li>
+                        <li><a class="dropdown-item py-2" asp-controller="RH" asp-action="Profile">Mon profil</a></li>
                     }
                     else if (userRole == "Directeur")
                     {
-                        <li><a class="dropdown-item" asp-controller="DirecteurDepartement" asp-action="Profile">Mon profil</a></li>
+                        <li><a class="dropdown-item py-2" asp-controller="DirecteurDepartement" asp-action="Profile">Mon profil</a></li>
                     }
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout">Déconnexion</a></li>
+                    <li><a class="dropdown-item py-2 text-danger" asp-controller="Account" asp-action="Logout">Déconnexion</a></li>
                 </ul>
             </div>
         </div>
@@ -423,8 +539,8 @@
 
     <!-- FOOTER -->
     <footer class="footer">
-        <div>© @DateTime.Now.Year AdminPro</div>
-        <div>All rights reserved</div>
+        <div>© @DateTime.Now.Year xintra</div>
+        <div>Tous droits réservés</div>
     </footer>
 
 </div>

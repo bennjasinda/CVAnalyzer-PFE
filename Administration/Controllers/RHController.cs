@@ -41,6 +41,31 @@ namespace Administration.Controllers
             return View(query.ToList());
         }
 
+        // ================= DÉTAIL D'UN POSTE =================
+        // ✅ ACTION AJOUTÉE
+        public async Task<IActionResult> DetailPoste(int id)
+        {
+            var offre = await _context.OffresEmploi.FindAsync(id);
+            if (offre == null)
+            {
+                return NotFound();
+            }
+
+            // Récupérer les candidats (utilisateurs avec rôle Candidat)
+            var candidats = await _context.Utilisateurs
+                .Where(u => u.Role == "Candidat")
+                .OrderByDescending(u => u.DateCreation)
+                .ToListAsync();
+
+            var viewModel = new PosteDetailViewModel
+            {
+                Offre = offre,
+                Candidats = candidats
+            };
+
+            return View(viewModel);
+        }
+
         // ================= CRÉER UN POSTE =================
         [HttpGet]
         public IActionResult CreatePoste() => View(new OffreEmploi());

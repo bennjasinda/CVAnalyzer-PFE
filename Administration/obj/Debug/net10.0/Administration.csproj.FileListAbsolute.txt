@@ -223,3 +223,4 @@ C:\Users\bennj\Desktop\CvParsing\Administration\obj\Debug\net10.0\refint\Adminis
 C:\Users\bennj\Desktop\CvParsing\Administration\obj\Debug\net10.0\Administration.pdb
 C:\Users\bennj\Desktop\CvParsing\Administration\obj\Debug\net10.0\Administration.genruntimeconfig.cache
 C:\Users\bennj\Desktop\CvParsing\Administration\obj\Debug\net10.0\ref\Administration.dll
+C:\Users\bennj\Desktop\CvParsing\Administration\obj\Debug\net10.0\Administration.sourcelink.json
