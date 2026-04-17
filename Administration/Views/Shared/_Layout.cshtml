@@ -398,10 +398,7 @@
             <span>Utilisateurs</span>
         </a>
 
-        <a asp-controller="Admin" asp-action="CreateUser" class="nav-item">
-            <i class="bi bi-person-plus"></i> 
-            <span>Créer utilisateur</span>
-        </a>
+        
 
         <div class="nav-section-label">Gestion Postes</div>
 
@@ -435,10 +432,7 @@
             <span>Postes</span>
         </a>
 
-        <a asp-controller="RH" asp-action="CreatePoste" class="nav-item">
-            <i class="bi bi-plus-circle"></i> 
-            <span>Créer poste</span>
-        </a>
+        
 
         <div class="nav-section-label">Compte</div>
 
@@ -460,10 +454,7 @@
 
         <div class="nav-section-label">Candidatures</div>
 
-        <a asp-controller="DirecteurDepartement" asp-action="ResultatsCV" class="nav-item">
-            <i class="bi bi-file-earmark-text"></i> 
-            <span>CV de chaque poste</span>
-        </a>
+        
         
         <div class="nav-section-label">Gestion Postes</div>
 
@@ -502,9 +493,6 @@
         <h1>@ViewData["Title"]</h1>
 
         <div class="d-flex align-items-center gap-3">
-            <div class="topbar-search d-none d-md-block">
-                <input type="text" placeholder="Rechercher..." />
-            </div>
             
             <!-- Dropdown de l'avatar -->
             <div class="dropdown">

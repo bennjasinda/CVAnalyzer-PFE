@@ -227,7 +227,76 @@
         margin-right: 8px;
     }
 
-    
+    .selection-bar {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 12px 20px;
+        margin-bottom: 16px;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .selection-bar.active {
+        display: flex;
+    }
+
+    .selection-info {
+        font-size: 14px;
+        color: #1e40af;
+        font-weight: 500;
+    }
+
+    .btn-delete-selection {
+        padding: 8px 16px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .btn-delete-selection:hover {
+        background: #dc2626;
+    }
+
+    .custom-checkbox input[type="checkbox"] {
+        display: none;
+    }
+
+    .custom-checkbox {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #cbd5e1;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .custom-checkbox:hover {
+        border-color: #6366f1;
+    }
+
+    .custom-checkbox.checked {
+        background: #6366f1;
+        border-color: #6366f1;
+    }
+
+    .custom-checkbox.checked::after {
+        content: '✓';
+        color: white;
+        font-size: 12px;
+    }
 </style>
 
 <div class="container-fluid px-4 py-3">
@@ -235,7 +304,7 @@
     <div class="jobs-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-                <h5 class="mb-1 fw-bold text-dark">All Jobs List</h5>
+                <h5 class="mb-1 fw-bold text-dark">Liste des postes</h5>
                 <small class="text-muted">@Model.Count() postes disponibles</small>
             </div>
             
@@ -243,27 +312,14 @@
                 <!-- Search Box -->
                 <div class="search-box">
                     <i class="bi bi-search"></i>
-                    <input type="text" id="searchInput" class="form-control" placeholder="Search Here..." 
-                           onkeyup="searchJobs()">
-                </div>
-
-                <!-- Sort Dropdown -->
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button" 
-                            data-bs-toggle="dropdown" style="border-radius: 8px;">
-                        Sort By
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="sortTable('date')">Date création</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="sortTable('titre')">Titre</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="sortTable('statut')">Statut</a></li>
-                    </ul>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Rechercher..." 
+                           value="@ViewBag.Search" onkeyup="searchJobs()">
                 </div>
 
                 <!-- New Post Button -->
                 <a asp-action="CreatePoste" class="btn btn-primary btn-sm" 
                    style="background: #6366f1; border: none; border-radius: 8px; padding: 8px 16px;">
-                    <i class="bi bi-plus-lg me-1"></i> Post Job
+                    <i class="bi bi-plus-lg me-1"></i> Créer un poste
                 </a>
             </div>
         </div>
@@ -282,21 +338,37 @@
     }
     else
     {
+        <!-- Selection Bar -->
+        <div class="selection-bar" id="selectionBar">
+            <div class="selection-info">
+                <i class="bi bi-check-square me-2"></i>
+                <span id="selectionCount">0</span> poste(s) sélectionné(s)
+            </div>
+            <form method="post" asp-action="DeletePostesSelection" id="deleteSelectionForm" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="selectedIds" id="selectedIdsInput" value="" />
+                <button type="submit" class="btn-delete-selection" onclick="return confirmDeleteSelection()">
+                    <i class="bi bi-trash"></i> Supprimer la sélection
+                </button>
+            </form>
+        </div>
+
         <div class="job-table">
+            <form id="selectionForm">
             <table class="table mb-0" id="jobsTable">
                 <thead>
                     <tr>
                         <th style="width: 40px;">
                             <div class="custom-checkbox" onclick="toggleAllCheckboxes(this)"></div>
                         </th>
-                        <th>Job Title</th>
-                        <th>Department</th>
+                        <th>Titre du poste</th>
+                        <th>Département</th>
                         <th>Type</th>
-                        <th>Experience</th>
-                        <th>Education Level</th>
-                        <th>Status</th>
-                        <th>Created Date</th>
-                        <th class="text-end">Action</th>
+                        <th>Expérience</th>
+                        <th>Niveau d'éducation</th>
+                        <th>Statut</th>
+                        <th>Date de création</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -305,7 +377,9 @@
                         var firstLetter = o.Titre.Substring(0, 1).ToUpper();
                         <tr class="job-row">
                             <td>
-                                <div class="custom-checkbox" onclick="toggleCheckbox(this)"></div>
+                                <div class="custom-checkbox" onclick="toggleCheckbox(this, @o.Id)">
+                                    <input type="checkbox" name="selectedPostes" value="@o.Id" style="display: none;" />
+                                </div>
                             </td>
                             <td>
                                 <div class="job-title-cell">
@@ -349,22 +423,23 @@
                     }
                 </tbody>
             </table>
+            </form>
 
             <!-- Pagination -->
             <div class="pagination-wrapper">
                 <div class="pagination-info">
-                    Showing <strong>1 to @Model.Count</strong> of <strong>@Model.Count</strong> entries
+                    Affichage de <strong>1 à @Model.Count</strong> sur <strong>@Model.Count</strong> entrées
                 </div>
                 <nav>
                     <ul class="pagination">
                         <li class="page-item disabled">
-                            <a class="page-link" href="#">Previous</a>
+                            <a class="page-link" href="#">Précédent</a>
                         </li>
                         <li class="page-item active"><a class="page-link active" href="#">1</a></li>
                         <li class="page-item"><a class="page-link" href="#">2</a></li>
                         <li class="page-item"><a class="page-link" href="#">3</a></li>
                         <li class="page-item">
-                            <a class="page-link" href="#">Next</a>
+                            <a class="page-link" href="#">Suivant</a>
                         </li>
                     </ul>
                 </nav>
@@ -374,9 +449,24 @@
 </div>
 
 <script>
+    // Track selected IDs
+    let selectedIds = [];
+
     // Toggle single checkbox
-    function toggleCheckbox(element) {
+    function toggleCheckbox(element, posteId) {
         element.classList.toggle('checked');
+        const checkbox = element.querySelector('input[type="checkbox"]');
+        checkbox.checked = element.classList.contains('checked');
+        
+        if (element.classList.contains('checked')) {
+            if (!selectedIds.includes(posteId)) {
+                selectedIds.push(posteId);
+            }
+        } else {
+            selectedIds = selectedIds.filter(id => id !== posteId);
+        }
+        
+        updateSelectionBar();
     }
 
     // Toggle all checkboxes
@@ -384,13 +474,50 @@
         element.classList.toggle('checked');
         const isChecked = element.classList.contains('checked');
         const checkboxes = document.querySelectorAll('.job-row .custom-checkbox');
+        
+        selectedIds = [];
+        
         checkboxes.forEach(cb => {
+            const checkbox = cb.querySelector('input[type="checkbox"]');
+            checkbox.checked = isChecked;
             if (isChecked) {
                 cb.classList.add('checked');
+                const posteId = parseInt(checkbox.value);
+                if (!selectedIds.includes(posteId)) {
+                    selectedIds.push(posteId);
+                }
             } else {
                 cb.classList.remove('checked');
             }
         });
+        
+        updateSelectionBar();
+    }
+
+    // Update selection bar visibility and count
+    function updateSelectionBar() {
+        const selectionBar = document.getElementById('selectionBar');
+        const selectionCount = document.getElementById('selectionCount');
+        const selectedIdsInput = document.getElementById('selectedIdsInput');
+        
+        if (selectedIds.length > 0) {
+            selectionBar.classList.add('active');
+            selectionCount.textContent = selectedIds.length;
+            selectedIdsInput.value = selectedIds.join(',');
+        } else {
+            selectionBar.classList.remove('active');
+            selectionCount.textContent = '0';
+            selectedIdsInput.value = '';
+        }
+    }
+
+    // Confirm delete selection
+    function confirmDeleteSelection() {
+        if (selectedIds.length === 0) {
+            alert('Veuillez sélectionner au moins un poste à supprimer.');
+            return false;
+        }
+        return confirm('Êtes-vous sûr de vouloir supprimer les ' + selectedIds.length + ' poste(s) sélectionné(s) ?');
     }
 
     // Search functionality
@@ -421,55 +548,5 @@
         }
     }
 
-    // Sort functionality
-    function sortTable(column) {
-        const table = document.getElementById('jobsTable');
-        let switching = true;
-        let shouldSwitch;
-        let switchcount = 0;
-        let dir = 'asc';
 
-        while (switching) {
-            switching = false;
-            const rows = table.rows;
-
-            for (let i = 1; i < (rows.length - 1); i++) {
-                shouldSwitch = false;
-                let x = rows[i].getElementsByTagName('TD')[getColumnIndex(column)];
-                let y = rows[i + 1].getElementsByTagName('TD')[getColumnIndex(column)];
-
-                if (dir === 'asc') {
-                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                } else if (dir === 'desc') {
-                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                }
-            }
-
-            if (shouldSwitch) {
-                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                switching = true;
-                switchcount++;
-            } else {
-                if (switchcount === 0 && dir === 'asc') {
-                    dir = 'desc';
-                    switching = true;
-                }
-            }
-        }
-    }
-
-    function getColumnIndex(column) {
-        const columns = {
-            'titre': 1,
-            'date': 7,
-            'statut': 6
-        };
-        return columns[column] || 1;
-    }
 </script>

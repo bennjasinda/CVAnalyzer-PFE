@@ -563,6 +563,30 @@
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
+    .score-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+    }
+
+    .score-badge.high {
+        background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+    }
+
+    .score-badge.medium {
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    }
+
+    .score-badge.low {
+        background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    }
+
     .no-candidates {
         text-align: center;
         padding: 60px 20px;
@@ -807,7 +831,7 @@
         <div class="candidates-header">
             <div class="candidates-header-left">
                 <i class="bi bi-people" style="color: #6366f1; font-size: 18px;"></i>
-                <h5>Candidats disponibles</h5>
+                <h5>Candidats adéquats</h5>
                 <span class="candidates-count">@Model.Candidats.Count()</span>
             </div>
             <div class="candidates-search">
@@ -821,8 +845,9 @@
             <table class="candidates-table" id="candidatesTable">
                 <thead>
                     <tr>
-                        <th style="width: 30%;">Candidat</th>
+                        <th style="width: 25%;">Candidat</th>
                         <th>Email</th>
+                        <th style="width: 100px;">Score</th>
                         <th>Date inscription</th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -837,6 +862,10 @@
                         
                         var isActive = candidat.IsActive;
                         var statusClass = isActive ? "status-active" : "status-inactive";
+                        
+                        // Static score for demonstration (would come from database in real implementation)
+                        var score = (candidat.Id % 40) + 60; // Score between 60-99
+                        var scoreClass = score >= 80 ? "high" : (score >= 70 ? "medium" : "low");
 
                         <tr>
                             <td>
@@ -849,7 +878,123 @@
                                 </div>
                             </td>
                             <td>@candidat.Email</td>
+                            <td>
+                                <span class="score-badge @scoreClass">
+                                    <i class="bi bi-star-fill" style="font-size: 10px;"></i> @score%
+                                </span>
+                            </td>
+                            <td>@candidat.DateCreation.ToString("dd MMM yyyy")</td>
                             
+                            <td>
+                                <div class="candidate-actions">
+                                    <a asp-action="ProfilCandidat" asp-route-id="@candidat.Id" class="cand-btn btn-view" title="Voir profil">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="mailto:@candidat.Email" class="cand-btn btn-download" title="Contacter">
+                                        <i class="bi bi-envelope"></i>
+                                    </a>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <form asp-action="SupprimerCandidat" asp-route-id="@candidat.Id" method="post" 
+                                              style="display: inline;" onsubmit="return confirm('Supprimer ce candidat ?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="cand-btn btn-delete" title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="candidates-footer">
+                <div class="candidates-footer-info">
+                    Affichage de <strong>1 à @Model.Candidats.Count()</strong> sur <strong>@Model.Candidats.Count()</strong> candidats
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" style="gap: 4px;">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Previous</a>
+                        </li>z
+                        <li class="page-item active">
+                            <a class="page-link" href="#" style="background: #6366f1; border-color: #6366f1; border-radius: 6px; color: white;">1</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+        else
+        {
+            <div class="no-candidates">
+                <i class="bi bi-inbox d-block"></i>
+                <h6>Aucun candidat</h6>
+                <p>Aucun candidat disponible pour le moment.</p>
+            </div>
+        }
+    </div>
+    <div></div>
+    <div class="candidates-section">
+        <div class="candidates-header">
+            <div class="candidates-header-left">
+                <i class="bi bi-people" style="color: #6366f1; font-size: 18px;"></i>
+                <h5>Candidats ayant postulé</h5>
+                <span class="candidates-count">@Model.Candidats.Count()</span>
+            </div>
+            <div class="candidates-search">
+                <i class="bi bi-search"></i>
+                <input type="text" id="candidateSearch2" placeholder="Rechercher un candidat..." onkeyup="searchCandidates2()">
+            </div>
+        </div>
+
+        @if (Model.Candidats.Any())
+        {
+            <table class="candidates-table" id="candidatesTable2">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Candidat</th>
+                        <th>Email</th>
+                        <th style="width: 100px;">Score</th>
+                        <th>Date inscription</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var candidat in Model.Candidats)
+                    {
+                        var avatarColors = new[] { "#6366f1", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#14b8a6", "#ec4899" };
+                        var colorIndex = (candidat.Id * 7) % avatarColors.Length;
+                        var color = avatarColors[colorIndex];
+                        var initial = candidat.NomUtilisateur?.Length > 0 ? candidat.NomUtilisateur[0].ToString().ToUpper() : "?";
+                        
+                        var isActive = candidat.IsActive;
+                        var statusClass = isActive ? "status-active" : "status-inactive";
+                        
+                        // Static score for demonstration (would come from database in real implementation)
+                        var score2 = ((candidat.Id + 5) % 40) + 60; // Score between 60-99 (different from first table)
+                        var scoreClass2 = score2 >= 80 ? "high" : (score2 >= 70 ? "medium" : "low");
+
+                        <tr>
+                            <td>
+                                <div class="candidate-info">
+                                    <div class="candidate-avatar" style="background: @color;">@initial</div>
+                                    <div>
+                                        <div class="candidate-name">@candidat.NomUtilisateur</div>
+                                        
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@candidat.Email</td>
+                            <td>
+                                <span class="score-badge @scoreClass2">
+                                    <i class="bi bi-star-fill" style="font-size: 10px;"></i> @score2%
+                                </span>
+                            </td>
                             <td>@candidat.DateCreation.ToString("dd MMM yyyy")</td>
                             
                             <td>
@@ -913,6 +1058,30 @@
             const input = document.getElementById('candidateSearch');
             const filter = input.value.toLowerCase();
             const table = document.getElementById('candidatesTable');
+            if (!table) return;
+            
+            const tr = table.getElementsByTagName('tr');
+            for (let i = 1; i < tr.length; i++) {
+                const tdName = tr[i].getElementsByTagName('td')[0];
+                const tdEmail = tr[i].getElementsByTagName('td')[1];
+                if (tdName || tdEmail) {
+                    const nameValue = (tdName?.textContent || tdName?.innerText || '').toLowerCase();
+                    const emailValue = (tdEmail?.textContent || tdEmail?.innerText || '').toLowerCase();
+                    
+                    if (nameValue.indexOf(filter) > -1 || emailValue.indexOf(filter) > -1) {
+                        tr[i].style.display = '';
+                    } else {
+                        tr[i].style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        // Search for second table (Candidats ayant postulé)
+        function searchCandidates2() {
+            const input = document.getElementById('candidateSearch2');
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById('candidatesTable2');
             if (!table) return;
             
             const tr = table.getElementsByTagName('tr');

@@ -325,9 +325,7 @@
                 <h4><i class="bi bi-briefcase me-2"></i>Gestion des Postes</h4>
                 <p class="mb-0 opacity-75">Gérez toutes les offres d'emploi de votre organisation</p>
             </div>
-            <a asp-action="CreatePoste" class="btn btn-light btn-primary-custom">
-                <i class="bi bi-plus-lg me-2"></i>Nouveau Poste
-            </a>
+            
         </div>
     </div>
 
@@ -362,18 +360,12 @@
     <!-- Table Container -->
     <div class="table-container">
         <div class="table-header">
-            <h5 class="mb-0 fw-semibold">Tous les Postes</h5>
+            <h5 class="mb-0 fw-semibold">Tous les Postes (Consultation uniquement)</h5>
             <div class="d-flex gap-2 flex-wrap">
                 <div class="search-box">
                     <i class="bi bi-search"></i>
-                    <input type="text" class="form-control" placeholder="Rechercher un poste...">
+                    <input type="text" class="form-control" placeholder="Rechercher un poste..." id="searchInput" onkeyup="searchJobs()">
                 </div>
-                <select class="form-select" style="width: auto;">
-                    <option>Trier par</option>
-                    <option>Date de création</option>
-                    <option>Titre</option>
-                    <option>Département</option>
-                </select>
             </div>
         </div>
 
@@ -397,7 +389,6 @@
                 <table class="modern-table">
                     <thead>
                         <tr>
-                            <th style="width: 40px;"><input type="checkbox" class="checkbox-custom"></th>
                             <th>Titre du Poste</th>
                             <th>Département</th>
                             <th>Type</th>
@@ -411,8 +402,7 @@
                     <tbody>
                         @foreach (var o in Model)
                         {
-                            <tr>
-                                <td><input type="checkbox" class="checkbox-custom"></td>
+                            <tr class="job-row">
                                 <td>
                                     <div class="job-title-cell">
                                         <div class="job-icon">@o.Titre.Substring(0,1).ToUpper()</div>
@@ -462,21 +452,10 @@
                                 </td>
                                 <td>
                                     <div class="action-btns">
-                                        <a asp-action="ResultatsCV" asp-route-offreId="@o.Id"
-                                           class="action-btn view" title="Voir les CV">
+                                        <a asp-controller="RH" asp-action="DetailPoste" asp-route-id="@o.Id"
+                                           class="action-btn view" title="Voir les détails">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a asp-action="EditPoste" asp-route-id="@o.Id"
-                                           class="action-btn edit" title="Modifier">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <form asp-action="DeletePoste" asp-route-id="@o.Id" method="post" class="d-inline"
-                                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce poste ?')">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="action-btn delete" title="Supprimer">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -502,9 +481,28 @@
 </div>
 
 <script>
-    // Select all checkboxes
-    document.querySelector('thead .checkbox-custom').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('tbody .checkbox-custom');
-        checkboxes.forEach(cb => cb.checked = this.checked);
-    });
+    // Search functionality
+    function searchJobs() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.querySelector('.modern-table');
+        const tr = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < tr.length; i++) {
+            const tdTitle = tr[i].getElementsByTagName('td')[0];
+            const tdDept = tr[i].getElementsByTagName('td')[1];
+            
+            if (tdTitle || tdDept) {
+                const titleValue = tdTitle.textContent || tdTitle.innerText;
+                const deptValue = tdDept.textContent || tdDept.innerText;
+                
+                if (titleValue.toLowerCase().indexOf(filter) > -1 || 
+                    deptValue.toLowerCase().indexOf(filter) > -1) {
+                    tr[i].style.display = '';
+                } else {
+                    tr[i].style.display = 'none';
+                }
+            }
+        }
+    }
 </script>

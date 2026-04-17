@@ -1,20 +1,17 @@
-@model Administration.Models.Match
+@model Administration.Models.Utilisateur
 @{
     ViewData["Title"] = "Profil candidat";
     Layout = "~/Views/Shared/_Layout.cshtml";
     
-    // Get score from match
-    var score = (int)Model.GlobalScore;
+    // Static score for demonstration
+    var score = 75;
     var scoreClass = score >= 80 ? "high" : (score >= 70 ? "medium" : "low");
     
     // Avatar color
-    var avatarColors = new[] { "#f59e0b", "#fbbf24", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6", "#14b8a6", "#ec4899" };
-    var colorIndex = (Model.CvId * 7) % avatarColors.Length;
+    var avatarColors = new[] { "#6366f1", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#14b8a6", "#ec4899" };
+    var colorIndex = (Model.Id * 7) % avatarColors.Length;
     var color = avatarColors[colorIndex];
-    
-    var candidateName = Model.Cv?.DonneesCv?.NomCandidat ?? "Candidat";
-    var candidateEmail = Model.Cv?.DonneesCv?.Email ?? "—";
-    var initial = candidateName?.Length > 0 ? candidateName[0].ToString().ToUpper() : "?";
+    var initial = Model.NomUtilisateur?.Length > 0 ? Model.NomUtilisateur[0].ToString().ToUpper() : "?";
 }
 
 <style>
@@ -288,8 +285,8 @@
 <div class="profile-container">
     <!-- Back Button -->
     <div style="margin-bottom: 24px;">
-        <a asp-action="DetailsPoste" asp-route-id="@Model.OffreId" class="back-btn">
-            <i class="bi bi-arrow-left"></i> Retour au poste
+        <a href="javascript:history.back()" class="back-btn">
+            <i class="bi bi-arrow-left"></i> Retour
         </a>
     </div>
 
@@ -299,20 +296,20 @@
             @initial
         </div>
         <div class="profile-info">
-            <h2>@candidateName</h2>
-            <p><i class="bi bi-envelope" style="color: #f59e0b; margin-right: 8px;"></i>@candidateEmail</p>
+            <h2>@Model.NomUtilisateur</h2>
+            <p><i class="bi bi-envelope" style="color: #6366f1; margin-right: 8px;"></i>@Model.Email</p>
             <div class="profile-meta">
                 <div class="meta-item">
-                    <i class="bi bi-briefcase"></i>
-                    Poste: @(Model.Offre?.Titre ?? "—")
+                    <i class="bi bi-calendar3"></i>
+                    Inscrit le @Model.DateCreation.ToString("dd MMMM yyyy")
                 </div>
                 <div class="meta-item">
-                    <i class="bi bi-building"></i>
-                    @(Model.Offre?.Departement ?? "—")
+                    <i class="bi bi-person-badge"></i>
+                    ID: @Model.Id
                 </div>
                 <div class="meta-item">
                     <i class="bi bi-check-circle"></i>
-                    Match ID: @Model.Id
+                    @(Model.IsActive ? "Actif" : "Inactif")
                 </div>
             </div>
         </div>

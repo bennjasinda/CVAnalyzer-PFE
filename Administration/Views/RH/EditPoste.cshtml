@@ -404,6 +404,13 @@
             if (!isValid) {
                 e.preventDefault();
                 alert('Veuillez remplir tous les champs obligatoires.');
+                return false;
+            }
+            
+            // Confirmation before saving
+            if (!confirm('Êtes-vous sûr de vouloir enregistrer les modifications ?')) {
+                e.preventDefault();
+                return false;
             }
         });
     </script>

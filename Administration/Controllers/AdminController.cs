@@ -240,26 +240,80 @@ namespace Administration.Controllers
             {
                 Id = user.Id,
                 NomUtilisateur = user.NomUtilisateur,
-                Email = user.Email
+                Email = user.Email,
+                CurrentPhotoUrl = user.PhotoUrl
             };
             return View(vm);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Profile(ProfileEditViewModel model)
+        public async Task<IActionResult> Profile(ProfileEditViewModel model)
         {
             if (ModelState.IsValid)
             {
                 var user = _context.Utilisateurs.Find(model.Id);
                 if (user == null) return NotFound();
 
+                // Update email
                 user.Email = model.Email;
+
+                // Handle password change
                 if (!string.IsNullOrEmpty(model.NewPassword))
+                {
+                    // Verify current password
+                    if (string.IsNullOrEmpty(model.CurrentPassword))
+                    {
+                        ModelState.AddModelError("CurrentPassword", "Le mot de passe actuel est requis pour changer le mot de passe.");
+                        return View(model);
+                    }
+
+                    // Verify current password using BCrypt
+                    if (!BCrypt.Net.BCrypt.Verify(model.CurrentPassword, user.MotPasse))
+                    {
+                        ModelState.AddModelError("CurrentPassword", "Le mot de passe actuel est incorrect.");
+                        return View(model);
+                    }
+
+                    // Hash and save new password
                     user.MotPasse = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+                }
+
+                // Handle profile image upload
+                if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    // Generate unique filename
+                    var uniqueFileName = $"{user.Id}_{Guid.NewGuid()}{Path.GetExtension(model.ProfileImage.FileName)}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    // Save the file
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.ProfileImage.CopyToAsync(fileStream);
+                    }
+
+                    // Delete old image if exists
+                    if (!string.IsNullOrEmpty(user.PhotoUrl))
+                    {
+                        var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.PhotoUrl.TrimStart('/'));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    // Save new image path
+                    user.PhotoUrl = $"/uploads/profiles/{uniqueFileName}";
+                }
 
                 _context.SaveChanges();
-                TempData["Success"] = "Profil mis à jour.";
+                TempData["Success"] = "Profil mis à jour avec succès.";
                 return RedirectToAction("Profile");
             }
             return View(model);

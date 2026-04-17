@@ -354,8 +354,15 @@
         <div class="profile-sidebar">
             <div class="profile-banner"></div>
             <div class="profile-avatar-wrapper">
-                <div class="profile-avatar">
-                    @(Model.NomUtilisateur.Length >= 2 ? Model.NomUtilisateur[..2].ToUpper() : Model.NomUtilisateur.ToUpper())
+                <div class="profile-avatar" id="profileAvatar">
+                    @if (!string.IsNullOrEmpty(Model.CurrentPhotoUrl))
+                    {
+                        <img src="@Model.CurrentPhotoUrl" alt="Photo de profil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+                    }
+                    else
+                    {
+                        @(Model.NomUtilisateur.Length >= 2 ? Model.NomUtilisateur[..2].ToUpper() : Model.NomUtilisateur.ToUpper())
+                    }
                 </div>
             </div>
             <div class="profile-name-section">
@@ -429,11 +436,22 @@
 
                 <!-- Password Section (Hidden by default, shown when Change Password tab is clicked) -->
                 <div id="passwordSection" style="display: none;">
-                    <div class="form-section-title">Change Password</div>
+                    <div class="form-section-title">Changer le mot de passe</div>
                     <div class="form-grid">
                         <div class="form-group full-width">
-                            <label class="form-label">New Password</label>
-                            <input type="password" asp-for="NewPassword" class="form-control-custom" placeholder="Enter new password" />
+                            <label class="form-label">Mot de passe actuel <span class="required">*</span></label>
+                            <input type="password" asp-for="CurrentPassword" class="form-control-custom" placeholder="Entrez votre mot de passe actuel" />
+                            <span asp-validation-for="CurrentPassword" class="text-danger small"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nouveau mot de passe</label>
+                            <input type="password" asp-for="NewPassword" class="form-control-custom" placeholder="Entrez le nouveau mot de passe" />
+                            <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Confirmer le mot de passe</label>
+                            <input type="password" asp-for="ConfirmNewPassword" class="form-control-custom" placeholder="Confirmez le nouveau mot de passe" />
+                            <span asp-validation-for="ConfirmNewPassword" class="text-danger small"></span>
                         </div>
                     </div>
                 </div>
@@ -479,10 +497,20 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const upload = document.querySelector('.image-upload');
-                    upload.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    upload.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                     upload.innerHTML += `<div class="image-upload-camera"><i class="bi bi-camera" style="font-size: 14px;"></i></div>`;
                 };
                 reader.readAsDataURL(file);
+                
+                // Also update the sidebar avatar preview
+                const sidebarAvatar = document.getElementById('profileAvatar');
+                if (sidebarAvatar) {
+                    const sidebarReader = new FileReader();
+                    sidebarReader.onload = function(e) {
+                        sidebarAvatar.innerHTML = `<img src="${e.target.result}" alt="Photo de profil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`;
+                    };
+                    sidebarReader.readAsDataURL(file);
+                }
             }
         });
     </script>

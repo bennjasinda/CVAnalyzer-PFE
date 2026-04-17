@@ -314,14 +314,7 @@
                                     </select>
                                     <span asp-validation-for="Type" class="validation-error"></span>
                                 </div>
-                                <div class="form-group">
-                                    <label asp-for="Statut" class="form-label">Statut</label>
-                                    <select asp-for="Statut" class="form-select-custom">
-                                        <option value="ACTIF" selected>ACTIF</option>
-                                        <option value="INACTIF">INACTIF</option>
-                                    </select>
-                                    <span class="form-hint">Contrôlez la visibilité du poste</span>
-                                </div>
+                                <input type="hidden" asp-for="Statut" value="ACTIF" />
                             </div>
                         </div>
 
