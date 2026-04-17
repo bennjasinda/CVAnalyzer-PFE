@@ -10,30 +10,25 @@ namespace Administration.ViewModels
         [Display(Name = "Nom d'utilisateur")]
         public string NomUtilisateur { get; set; } = string.Empty;
         
+        [Required(ErrorMessage = "L'email est requis.")]
+        [EmailAddress(ErrorMessage = "Email invalide.")]
         [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
-        
-        [Display(Name = "Téléphone")]
-        public string? Phone { get; set; }
         
         [Display(Name = "Photo de profil")]
         public IFormFile? ProfileImage { get; set; }
         
-        [Display(Name = "Département")]
-        public string Department { get; set; } = string.Empty;
-        
         [Display(Name = "Mot de passe actuel")]
-        [Required(ErrorMessage = "Le mot de passe actuel est requis pour changer le mot de passe.")]
-        public string CurrentPassword { get; set; } = string.Empty;
+        public string? CurrentPassword { get; set; }
         
         [Display(Name = "Nouveau mot de passe")]
-        public string NewPassword { get; set; } = string.Empty;
+        [MinLength(6, ErrorMessage = "Le mot de passe doit contenir au moins 6 caractères.")]
+        public string? NewPassword { get; set; }
         
         [Display(Name = "Confirmer le nouveau mot de passe")]
         [Compare("NewPassword", ErrorMessage = "Les mots de passe ne correspondent pas.")]
-        public string ConfirmNewPassword { get; set; } = string.Empty;
+        public string? ConfirmNewPassword { get; set; }
         
-        // Property to store the current profile image path
         public string? CurrentPhotoUrl { get; set; }
     }
 }
