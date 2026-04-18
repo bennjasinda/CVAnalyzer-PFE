@@ -4,11 +4,32 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     var search = ViewBag.Search as string ?? "";
     
-    // Group users by role
-    var admins = Model.Where(u => u.Role == "Admin").ToList();
-    var rhs = Model.Where(u => u.Role == "RH").ToList();
-    var directeurs = Model.Where(u => u.Role == "Directeur").ToList();
-    var candidats = Model.Where(u => u.Role == "Candidat").ToList();
+    // Filter users based on search
+    var filteredUsers = Model;
+    if (!string.IsNullOrWhiteSpace(search))
+    {
+        filteredUsers = Model.Where(u => 
+            u.NomUtilisateur.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+            u.Email.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+            u.Role.Contains(search, StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+    }
+    
+    // Group filtered users by role
+    var admins = filteredUsers.Where(u => u.Role == "Admin").ToList();
+    var rhs = filteredUsers.Where(u => u.Role == "RH").ToList();
+    var directeurs = filteredUsers.Where(u => u.Role == "Directeur").ToList();
+    var candidats = filteredUsers.Where(u => u.Role == "Candidat").ToList();
+    
+    // Helper function to get profile image URL
+    string GetProfileImageUrl(Administration.Models.Utilisateur user)
+    {
+        if (!string.IsNullOrEmpty(user.PhotoUrl))
+        {
+            return user.PhotoUrl;
+        }
+        return null;
+    }
 }
 
 <style>
@@ -92,8 +113,8 @@
     }
 
     .user-avatar {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
         color: white;
@@ -102,6 +123,14 @@
         justify-content: center;
         font-weight: 600;
         font-size: 14px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .user-info {
@@ -199,6 +228,92 @@
         margin-bottom: 12px;
         display: block;
     }
+
+    /* Live Search Styles */
+    .search-container {
+        position: relative;
+        flex: 1;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 14px 20px 14px 48px;
+        font-size: 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 18px;
+    }
+
+    .search-clear {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 4px;
+        display: none;
+    }
+
+    .search-clear:hover {
+        color: #64748b;
+    }
+
+    .search-clear.visible {
+        display: block;
+    }
+
+    .search-stats {
+        font-size: 13px;
+        color: #64748b;
+        margin-top: 8px;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 48px 24px;
+        color: #94a3b8;
+    }
+
+    .no-results i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    .hidden-section {
+        display: none !important;
+    }
+
+    .hidden-row {
+        display: none !important;
+    }
+
+    .highlight {
+        background: #fef3c7;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
 </style>
 
 <div class="users-container">
@@ -213,21 +328,17 @@
         </a>
     </div>
 
-    <!-- Barre de recherche -->
+    <!-- Barre de recherche Live Search -->
     <div class="card shadow-sm mb-4">
         <div class="card-body py-3">
-            <form method="get" class="d-flex gap-2">
-                <input type="text" name="search" value="@search" class="form-control" placeholder="Rechercher par nom, email ou rôle...">
-                <button type="submit" class="btn btn-outline-primary">
-                    <i class="bi bi-search me-2"></i>Rechercher
+            <div class="search-container">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="liveSearch" class="search-input" placeholder="Rechercher par nom ou email..." autocomplete="off">
+                <button type="button" id="clearSearch" class="search-clear">
+                    <i class="bi bi-x-circle-fill"></i>
                 </button>
-                @if (!string.IsNullOrEmpty(search))
-                {
-                    <a asp-action="Users" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-lg me-2"></i>Réinitialiser
-                    </a>
-                }
-            </form>
+            </div>
+            <div class="search-stats" id="searchStats"></div>
         </div>
     </div>
 
@@ -246,12 +357,12 @@
         <!-- Section Administrateurs -->
         @if (admins.Any())
         {
-            <div class="section-card">
+            <div class="section-card" data-role="admin">
                 <div class="section-header">
                     <h5 class="section-title admin">
                         <i class="bi bi-shield-fill"></i>Administrateurs
                     </h5>
-                    <span class="user-count">@admins.Count utilisateur(s)</span>
+                    <span class="user-count" id="count-admin">@admins.Count utilisateur(s)</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table-modern">
@@ -267,10 +378,20 @@
                         <tbody>
                             @foreach (var u in admins)
                             {
-                                <tr>
+                                var photoUrl = GetProfileImageUrl(u);
+                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()">
                                     <td>
                                         <div class="user-info">
-                                            <div class="user-avatar">@u.NomUtilisateur.Substring(0,1).ToUpper()</div>
+                                            <div class="user-avatar">
+                                                @if (!string.IsNullOrEmpty(photoUrl))
+                                                {
+                                                    <img src="@photoUrl" alt="@u.NomUtilisateur" />
+                                                }
+                                                else
+                                                {
+                                                    @u.NomUtilisateur.Substring(0,1).ToUpper()
+                                                }
+                                            </div>
                                             <div>
                                                 <div class="user-name">@u.NomUtilisateur</div>
                                                 <span class="role-badge admin">@u.Role</span>
@@ -321,12 +442,12 @@
         <!-- Section RH -->
         @if (rhs.Any())
         {
-            <div class="section-card">
+            <div class="section-card" data-role="rh">
                 <div class="section-header">
                     <h5 class="section-title rh">
                         <i class="bi bi-person-badge-fill"></i>Ressources Humaines
                     </h5>
-                    <span class="user-count">@rhs.Count utilisateur(s)</span>
+                    <span class="user-count" id="count-rh">@rhs.Count utilisateur(s)</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table-modern">
@@ -342,10 +463,20 @@
                         <tbody>
                             @foreach (var u in rhs)
                             {
-                                <tr>
+                                var photoUrl = GetProfileImageUrl(u);
+                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()">
                                     <td>
                                         <div class="user-info">
-                                            <div class="user-avatar">@u.NomUtilisateur.Substring(0,1).ToUpper()</div>
+                                            <div class="user-avatar">
+                                                @if (!string.IsNullOrEmpty(photoUrl))
+                                                {
+                                                    <img src="@photoUrl" alt="@u.NomUtilisateur" />
+                                                }
+                                                else
+                                                {
+                                                    @u.NomUtilisateur.Substring(0,1).ToUpper()
+                                                }
+                                            </div>
                                             <div>
                                                 <div class="user-name">@u.NomUtilisateur</div>
                                                 <span class="role-badge rh">@u.Role</span>
@@ -396,12 +527,12 @@
         <!-- Section Directeurs -->
         @if (directeurs.Any())
         {
-            <div class="section-card">
+            <div class="section-card" data-role="directeur">
                 <div class="section-header">
                     <h5 class="section-title directeur">
                         <i class="bi bi-briefcase-fill"></i>Directeurs
                     </h5>
-                    <span class="user-count">@directeurs.Count utilisateur(s)</span>
+                    <span class="user-count" id="count-directeur">@directeurs.Count utilisateur(s)</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table-modern">
@@ -417,10 +548,20 @@
                         <tbody>
                             @foreach (var u in directeurs)
                             {
-                                <tr>
+                                var photoUrl = GetProfileImageUrl(u);
+                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()">
                                     <td>
                                         <div class="user-info">
-                                            <div class="user-avatar">@u.NomUtilisateur.Substring(0,1).ToUpper()</div>
+                                            <div class="user-avatar">
+                                                @if (!string.IsNullOrEmpty(photoUrl))
+                                                {
+                                                    <img src="@photoUrl" alt="@u.NomUtilisateur" />
+                                                }
+                                                else
+                                                {
+                                                    @u.NomUtilisateur.Substring(0,1).ToUpper()
+                                                }
+                                            </div>
                                             <div>
                                                 <div class="user-name">@u.NomUtilisateur</div>
                                                 <span class="role-badge directeur">@u.Role</span>
@@ -471,12 +612,12 @@
         <!-- Section Candidats -->
         @if (candidats.Any())
         {
-            <div class="section-card">
+            <div class="section-card" data-role="candidat">
                 <div class="section-header">
                     <h5 class="section-title candidat">
                         <i class="bi bi-person-fill"></i>Candidats
                     </h5>
-                    <span class="user-count">@candidats.Count utilisateur(s)</span>
+                    <span class="user-count" id="count-candidat">@candidats.Count utilisateur(s)</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table-modern">
@@ -492,10 +633,20 @@
                         <tbody>
                             @foreach (var u in candidats)
                             {
-                                <tr>
+                                var photoUrl = GetProfileImageUrl(u);
+                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()">
                                     <td>
                                         <div class="user-info">
-                                            <div class="user-avatar">@u.NomUtilisateur.Substring(0,1).ToUpper()</div>
+                                            <div class="user-avatar">
+                                                @if (!string.IsNullOrEmpty(photoUrl))
+                                                {
+                                                    <img src="@photoUrl" alt="@u.NomUtilisateur" />
+                                                }
+                                                else
+                                                {
+                                                    @u.NomUtilisateur.Substring(0,1).ToUpper()
+                                                }
+                                            </div>
                                             <div>
                                                 <div class="user-name">@u.NomUtilisateur</div>
                                                 <span class="role-badge candidat">@u.Role</span>
@@ -543,4 +694,149 @@
             </div>
         }
     }
+
+    <!-- No Results Message -->
+    <div id="noResults" class="no-results hidden-section">
+        <i class="bi bi-search"></i>
+        <h6>Aucun utilisateur trouvé</h6>
+        <p>Aucun utilisateur ne correspond à votre recherche.</p>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Live Search Functionality
+        const searchInput = document.getElementById('liveSearch');
+        const clearButton = document.getElementById('clearSearch');
+        const searchStats = document.getElementById('searchStats');
+        const noResults = document.getElementById('noResults');
+        const userRows = document.querySelectorAll('.user-row');
+        const sectionCards = document.querySelectorAll('.section-card');
+
+        let totalUsers = userRows.length;
+
+        // Search function
+        function performSearch(query) {
+            query = query.toLowerCase().trim();
+            let visibleCount = 0;
+
+            // Show/hide clear button
+            clearButton.classList.toggle('visible', query.length > 0);
+
+            if (query.length === 0) {
+                // Show all rows and sections
+                userRows.forEach(row => {
+                    row.classList.remove('hidden-row');
+                    restoreOriginalText(row);
+                });
+                sectionCards.forEach(card => card.classList.remove('hidden-section'));
+                updateCounts();
+                searchStats.textContent = '';
+                noResults.classList.add('hidden-section');
+                return;
+            }
+
+            // Filter rows
+            userRows.forEach(row => {
+                const name = row.getAttribute('data-name');
+                const email = row.getAttribute('data-email');
+                const nameElement = row.querySelector('.user-name');
+                const emailElement = row.querySelector('.user-email');
+
+                if (name.includes(query) || email.includes(query)) {
+                    row.classList.remove('hidden-row');
+                    visibleCount++;
+                    
+                    // Highlight matching text
+                    if (nameElement) {
+                        nameElement.innerHTML = highlightText(nameElement.textContent, query);
+                    }
+                    if (emailElement) {
+                        emailElement.innerHTML = highlightText(emailElement.textContent, query);
+                    }
+                } else {
+                    row.classList.add('hidden-row');
+                    restoreOriginalText(row);
+                }
+            });
+
+            // Update section visibility and counts
+            sectionCards.forEach(card => {
+                const visibleRows = card.querySelectorAll('.user-row:not(.hidden-row)');
+                const role = card.getAttribute('data-role');
+                const countElement = document.getElementById('count-' + role);
+                
+                if (visibleRows.length === 0) {
+                    card.classList.add('hidden-section');
+                } else {
+                    card.classList.remove('hidden-section');
+                    if (countElement) {
+                        countElement.textContent = visibleRows.length + ' utilisateur' + (visibleRows.length > 1 ? 's' : '');
+                    }
+                }
+            });
+
+            // Update stats
+            searchStats.textContent = visibleCount + ' résultat' + (visibleCount > 1 ? 's' : '') + ' sur ' + totalUsers;
+
+            // Show no results message
+            if (visibleCount === 0) {
+                noResults.classList.remove('hidden-section');
+            } else {
+                noResults.classList.add('hidden-section');
+            }
+        }
+
+        // Highlight matching text
+        function highlightText(text, query) {
+            if (!query) return text;
+            const regex = new RegExp('(' + escapeRegex(query) + ')', 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Escape special regex characters
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Restore original text (remove highlights)
+        function restoreOriginalText(row) {
+            const nameElement = row.querySelector('.user-name');
+            const emailElement = row.querySelector('.user-email');
+            
+            if (nameElement) {
+                nameElement.textContent = nameElement.textContent;
+            }
+            if (emailElement) {
+                emailElement.textContent = emailElement.textContent;
+            }
+        }
+
+        // Update original counts
+        function updateCounts() {
+            sectionCards.forEach(card => {
+                const role = card.getAttribute('data-role');
+                const countElement = document.getElementById('count-' + role);
+                const allRows = card.querySelectorAll('.user-row');
+                
+                if (countElement) {
+                    countElement.textContent = allRows.length + ' utilisateur' + (allRows.length > 1 ? 's' : '');
+                }
+            });
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', (e) => {
+            performSearch(e.target.value);
+        });
+
+        clearButton.addEventListener('click', () => {
+            searchInput.value = '';
+            performSearch('');
+            searchInput.focus();
+        });
+
+        // Initialize
+        searchInput.focus();
+    </script>
+}

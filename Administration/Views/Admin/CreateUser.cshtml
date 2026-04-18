@@ -6,64 +6,368 @@
     var roles = ViewBag.Roles as List<string> ?? new List<string>();
 }
 
-<div class="container-fluid px-4 py-3">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white fw-semibold">Créer un utilisateur</div>
-                <div class="card-body">
-                    <form method="post">
-                        @Html.AntiForgeryToken()
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+<style>
+    .create-user-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="NomUtilisateur" class="form-label fw-semibold">Nom d'utilisateur</label>
-                            <input asp-for="NomUtilisateur" class="form-control" />
-                            <span asp-validation-for="NomUtilisateur" class="text-danger small"></span>
-                        </div>
+    .create-user-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label fw-semibold">Email</label>
-                            <input asp-for="Email" class="form-control" />
-                            <span asp-validation-for="Email" class="text-danger small"></span>
-                        </div>
+    .create-user-header {
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        padding: 32px;
+        text-align: center;
+        color: white;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="MotPasse" class="form-label fw-semibold">Mot de passe</label>
-                            <input asp-for="MotPasse" type="password" class="form-control" />
-                            <span asp-validation-for="MotPasse" class="text-danger small"></span>
-                        </div>
+    .create-user-icon {
+        width: 64px;
+        height: 64px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 28px;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="Role" class="form-label fw-semibold">Rôle</label>
-                            <select asp-for="Role" id="roleSelect" class="form-select"
-                                    asp-items="@(new SelectList(roles))">
-                                <option value="">-- Sélectionner un rôle --</option>
-                            </select>
-                            <span asp-validation-for="Role" class="text-danger small"></span>
-                        </div>
+    .create-user-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+    }
 
-                        {{!-- Zone départements : visible uniquement si Directeur --}}
-                        <div class="mb-3" id="departementsGroup" style="display:none;">
-                            <label asp-for="Departements" class="form-label fw-semibold">
-                                Départements gérés
-                                <small class="text-muted fw-normal">(séparés par des virgules)</small>
-                            </label>
-                            <textarea asp-for="Departements"
-                                      class="form-control"
-                                      rows="3"
-                                      placeholder="Ex : Informatique, Ressources Humaines, Finance"></textarea>
-                            <span asp-validation-for="Departements" class="text-danger small"></span>
-                            <div class="form-text">Entrez les noms des départements séparés par des virgules.</div>
-                        </div>
+    .create-user-subtitle {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-top: 4px;
+    }
 
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Créer</button>
-                            <a asp-action="Users" class="btn btn-outline-secondary">Retour</a>
-                        </div>
-                    </form>
-                </div>
+    .create-user-body {
+        padding: 32px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .form-label .required {
+        color: #ef4444;
+        margin-left: 2px;
+    }
+
+    .form-control-wrapper {
+        position: relative;
+    }
+
+    .form-control-wrapper i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 18px;
+    }
+
+    .form-control-wrapper textarea ~ i {
+        top: 16px;
+        transform: none;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 15px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        transition: all 0.2s;
+        background: #fafafa;
+    }
+
+    .form-control-wrapper i ~ .form-control {
+        padding-left: 48px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-control.is-invalid {
+        border-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .form-select {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 15px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        transition: all 0.2s;
+        background: #fafafa;
+        cursor: pointer;
+    }
+
+    .form-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .validation-message {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #ef4444;
+        margin-top: 8px;
+        font-weight: 500;
+    }
+
+    .validation-message::before {
+        content: "\F332";
+        font-family: "bootstrap-icons";
+        font-size: 14px;
+    }
+
+    .form-hint {
+        font-size: 13px;
+        color: #6b7280;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .form-hint::before {
+        content: "\F430";
+        font-family: "bootstrap-icons";
+        font-size: 14px;
+        color: #9ca3af;
+    }
+
+    .departements-group {
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .departements-group .form-label {
+        color: #92400e;
+    }
+
+    .departements-group .form-control {
+        background: white;
+        border-color: #fcd34d;
+    }
+
+    .departements-group .form-control:focus {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+    }
+
+    .departements-group .form-hint {
+        color: #a16207;
+    }
+
+    .departements-group .form-hint::before {
+        color: #f59e0b;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 28px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+        flex: 1;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-outline {
+        background: white;
+        color: #6b7280;
+        border: 2px solid #e5e7eb;
+    }
+
+    .btn-outline:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        color: #374151;
+    }
+
+    .alert-validation {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        color: #991b1b;
+    }
+
+    .alert-validation ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .alert-validation li {
+        margin-bottom: 4px;
+    }
+
+    .alert-validation li:last-child {
+        margin-bottom: 0;
+    }
+</style>
+
+<div class="create-user-container">
+    <div class="create-user-card">
+        <div class="create-user-header">
+            <div class="create-user-icon">
+                <i class="bi bi-person-plus-fill"></i>
             </div>
+            <h1 class="create-user-title">Nouvel utilisateur</h1>
+            <p class="create-user-subtitle">Créez un nouveau compte utilisateur</p>
+        </div>
+
+        <div class="create-user-body">
+            <form method="post" novalidate>
+                @Html.AntiForgeryToken()
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div asp-validation-summary="ModelOnly" class="alert-validation"></div>
+                }
+
+                <!-- Nom d'utilisateur -->
+                <div class="form-group">
+                    <label asp-for="NomUtilisateur" class="form-label">
+                        Nom d'utilisateur <span class="required">*</span>
+                    </label>
+                    <div class="form-control-wrapper">
+                        <i class="bi bi-person-fill"></i>
+                        <input asp-for="NomUtilisateur" class="form-control" placeholder="Entrez le nom d'utilisateur" required />
+                    </div>
+                    <span asp-validation-for="NomUtilisateur" class="validation-message"></span>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label">
+                        Adresse email <span class="required">*</span>
+                    </label>
+                    <div class="form-control-wrapper">
+                        <i class="bi bi-envelope-fill"></i>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="exemple@email.com" required />
+                    </div>
+                    <span asp-validation-for="Email" class="validation-message"></span>
+                </div>
+
+                <!-- Mot de passe -->
+                <div class="form-group">
+                    <label asp-for="MotPasse" class="form-label">
+                        Mot de passe <span class="required">*</span>
+                    </label>
+                    <div class="form-control-wrapper">
+                        <i class="bi bi-lock-fill"></i>
+                        <input asp-for="MotPasse" type="password" class="form-control" placeholder="••••••••" required />
+                    </div>
+                    <span asp-validation-for="MotPasse" class="validation-message"></span>
+                    <div class="form-hint">Le mot de passe doit contenir au moins 6 caractères.</div>
+                </div>
+
+                <!-- Rôle -->
+                <div class="form-group">
+                    <label asp-for="Role" class="form-label">
+                        Rôle <span class="required">*</span>
+                    </label>
+                    <select asp-for="Role" id="roleSelect" class="form-select" required>
+                        <option value="">-- Sélectionner un rôle --</option>
+                        @foreach (var role in roles)
+                        {
+                            <option value="@role">@role</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Role" class="validation-message"></span>
+                </div>
+
+                <!-- Départements (visible uniquement si Directeur) -->
+                <div class="departements-group" id="departementsGroup" style="display:none;">
+                    <label asp-for="Departements" class="form-label">
+                        Départements gérés <span class="required">*</span>
+                    </label>
+                    <div class="form-control-wrapper">
+                        <i class="bi bi-building-fill"></i>
+                        <textarea asp-for="Departements"
+                                  class="form-control"
+                                  rows="3"
+                                  placeholder="Ex : Informatique, Ressources Humaines, Finance"></textarea>
+                    </div>
+                    <span asp-validation-for="Departements" class="validation-message"></span>
+                    <div class="form-hint">Entrez les noms des départements séparés par des virgules.</div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <a asp-action="Users" class="btn btn-outline">
+                        <i class="bi bi-arrow-left"></i>
+                        Retour
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-person-plus-fill"></i>
+                        Créer l'utilisateur
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -78,9 +382,10 @@
         function toggleDepartements() {
             if (roleSelect.value === 'Directeur') {
                 departementsGroup.style.display = 'block';
+                departementsGroup.querySelector('textarea').setAttribute('required', 'required');
             } else {
                 departementsGroup.style.display = 'none';
-                // Vider le champ si on change de rôle
+                departementsGroup.querySelector('textarea').removeAttribute('required');
                 departementsGroup.querySelector('textarea').value = '';
             }
         }

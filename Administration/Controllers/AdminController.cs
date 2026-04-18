@@ -109,6 +109,18 @@ namespace Administration.Controllers
             if (user == null) return NotFound();
 
             ViewBag.Roles = new List<string> { "Admin", "RH", "Directeur" };
+            ViewBag.PhotoUrl = user.PhotoUrl;
+            ViewBag.UserInitial = user.NomUtilisateur.Substring(0, 1).ToUpper();
+            
+            // Avatar color based on role
+            ViewBag.AvatarColor = user.Role switch
+            {
+                "Admin" => "#ef4444",
+                "RH" => "#10b981",
+                "Directeur" => "#f59e0b",
+                _ => "#6366f1"
+            };
+            
             return View(new UserEditViewModel
             {
                 Id             = user.Id,
@@ -131,16 +143,33 @@ namespace Administration.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Roles = new List<string> { "Admin", "RH", "Directeur" };
+                
+                // Re-populate viewbag data for the view
+                var userForViewBag = _context.Utilisateurs.Find(model.Id);
+                if (userForViewBag != null)
+                {
+                    ViewBag.PhotoUrl = userForViewBag.PhotoUrl;
+                    ViewBag.UserInitial = userForViewBag.NomUtilisateur.Substring(0, 1).ToUpper();
+                    ViewBag.AvatarColor = userForViewBag.Role switch
+                    {
+                        "Admin" => "#ef4444",
+                        "RH" => "#10b981",
+                        "Directeur" => "#f59e0b",
+                        _ => "#6366f1"
+                    };
+                }
+                
                 return View(model);
             }
 
             var user = _context.Utilisateurs.Find(model.Id);
             if (user == null) return NotFound();
 
-            user.Email        = model.Email;
-            user.Role         = model.Role;
-            user.IsActive     = model.IsActive;
-            user.Departements = model.Role == "Directeur" ? model.Departements : null;
+            user.NomUtilisateur = model.NomUtilisateur;
+            user.Email          = model.Email;
+            user.Role           = model.Role;
+            user.IsActive       = model.IsActive;
+            user.Departements   = model.Role == "Directeur" ? model.Departements : null;
 
             if (!string.IsNullOrWhiteSpace(model.NewPassword))
                 user.MotPasse = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
@@ -170,8 +199,16 @@ namespace Administration.Controllers
         public IActionResult DeleteUser(int id)
         {
             var user = _context.Utilisateurs.Find(id);
+            
             if (user != null)
             {
+                // Delete associated CVs first to avoid foreign key constraint
+                var userCvs = _context.Cvs.Where(c => c.UtilisateurId == id).ToList();
+                if (userCvs.Any())
+                {
+                    _context.Cvs.RemoveRange(userCvs);
+                }
+                
                 _context.Utilisateurs.Remove(user);
                 _context.SaveChanges();
                 TempData["Success"] = "Utilisateur supprimé.";
@@ -199,6 +236,20 @@ namespace Administration.Controllers
                 .ToList();
 
             return View("~/Views/Admin/Postes.cshtml", query.ToList());
+        }
+
+        // Alias pour DetailPoste (sans 's') pour éviter les erreurs 404
+        public IActionResult DetailPoste(int id)
+        {
+            var offre = _context.OffresEmploi
+                .Include(o => o.Cvs)
+                    .ThenInclude(c => c.DonneesCv)
+                .Include(o => o.Cvs)
+                    .ThenInclude(c => c.Matches)
+                .FirstOrDefault(o => o.Id == id);
+
+            if (offre == null) return NotFound();
+            return View("DetailsPoste", offre);
         }
 
         // ================= DÉTAIL D'UN POSTE + CANDIDATS =================
@@ -255,7 +306,8 @@ namespace Administration.Controllers
                 var user = _context.Utilisateurs.Find(model.Id);
                 if (user == null) return NotFound();
 
-                // Update email
+                // Update username and email
+                user.NomUtilisateur = model.NomUtilisateur;
                 user.Email = model.Email;
 
                 // Handle password change
