@@ -3,15 +3,34 @@
     ViewData["Title"] = "Gestion des utilisateurs";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var search = ViewBag.Search as string ?? "";
+    var roleFilter = ViewBag.RoleFilter as string ?? "";
+    var departementFilter = ViewBag.DepartementFilter as string ?? "";
+    var departementsList = ViewBag.DepartementsList as List<string> ?? new List<string>();
     
     // Filter users based on search
     var filteredUsers = Model;
     if (!string.IsNullOrWhiteSpace(search))
     {
-        filteredUsers = Model.Where(u => 
+        filteredUsers = filteredUsers.Where(u => 
             u.NomUtilisateur.Contains(search, StringComparison.OrdinalIgnoreCase) ||
             u.Email.Contains(search, StringComparison.OrdinalIgnoreCase) ||
             u.Role.Contains(search, StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+    }
+    
+    // Filter by role
+    if (!string.IsNullOrWhiteSpace(roleFilter))
+    {
+        filteredUsers = filteredUsers.Where(u => u.Role == roleFilter).ToList();
+    }
+    
+    // Filter by department (for Directors)
+    if (!string.IsNullOrWhiteSpace(departementFilter) && roleFilter == "Directeur")
+    {
+        filteredUsers = filteredUsers.Where(u => 
+            u.Role == "Directeur" && 
+            u.Departements != null && 
+            u.Departements.Contains(departementFilter)
         ).ToList();
     }
     
@@ -308,6 +327,17 @@
         display: none !important;
     }
 
+    .dept-badge {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+    }
+
     .highlight {
         background: #fef3c7;
         padding: 2px 4px;
@@ -328,15 +358,42 @@
         </a>
     </div>
 
-    <!-- Barre de recherche Live Search -->
+    <!-- Barre de recherche et filtres -->
     <div class="card shadow-sm mb-4">
         <div class="card-body py-3">
-            <div class="search-container">
-                <i class="bi bi-search search-icon"></i>
-                <input type="text" id="liveSearch" class="search-input" placeholder="Rechercher par nom ou email..." autocomplete="off">
-                <button type="button" id="clearSearch" class="search-clear">
-                    <i class="bi bi-x-circle-fill"></i>
-                </button>
+            <div class="row g-3">
+                <!-- Search Input -->
+                <div class="col-md-5">
+                    <div class="search-container">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" id="liveSearch" class="search-input" placeholder="Rechercher par nom ou email..." autocomplete="off" value="@search">
+                        <button type="button" id="clearSearch" class="search-clear">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Role Filter -->
+                <div class="col-md-3">
+                    <select id="roleFilter" class="form-select" style="padding: 14px 16px; font-size: 15px; border: 2px solid #e2e8f0; border-radius: 12px;">
+                        <option value="">Tous les rôles</option>
+                        <option value="Admin" selected='@(roleFilter == "Admin" ? "selected" : null)'>Administrateur</option>
+                        <option value="RH" selected='@(roleFilter == "RH" ? "selected" : null)'>Ressources Humaines</option>
+                        <option value="Directeur" selected='@(roleFilter == "Directeur" ? "selected" : null)'>Directeur</option>
+                        <option value="Candidat" selected='@(roleFilter == "Candidat" ? "selected" : null)'>Candidat</option>
+                    </select>
+                </div>
+                <!-- Department Filter (visible only when Director role selected) -->
+                <div class="col-md-3" id="departementFilterContainer" style='@((roleFilter == "Directeur") ? "" : "display:none;")'>
+                    <select id="departementFilter" class="form-select" style="padding: 14px 16px; font-size: 15px; border: 2px solid #e2e8f0; border-radius: 12px;">
+                        <option value="">Tous les départements</option>
+                        @foreach (var dept in departementsList)
+                        {
+                            <option value="@dept" selected='@(departementFilter == dept ? "selected" : null)'>@dept</option>
+                        }
+                    </select>
+                </div>
+                <!-- Reset Button -->
+                
             </div>
             <div class="search-stats" id="searchStats"></div>
         </div>
@@ -379,7 +436,7 @@
                             @foreach (var u in admins)
                             {
                                 var photoUrl = GetProfileImageUrl(u);
-                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()">
+                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()" data-role="admin" data-departements="@(u.Departements?.ToLower() ?? "")">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-avatar">
@@ -414,9 +471,7 @@
                                         <a asp-action="UserDetails" asp-route-id="@u.Id" class="btn-action-sm btn-view" title="Détails">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a asp-action="EditUser" asp-route-id="@u.Id" class="btn-action-sm btn-edit" title="Modifier">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        
                                         <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn-action-sm @(u.IsActive ? "btn-toggle-active" : "btn-toggle-inactive")" title="@(u.IsActive ? "Désactiver" : "Activer")">
@@ -464,7 +519,7 @@
                             @foreach (var u in rhs)
                             {
                                 var photoUrl = GetProfileImageUrl(u);
-                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()">
+                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()" data-role="rh" data-departements="@(u.Departements?.ToLower() ?? "")">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-avatar">
@@ -499,9 +554,7 @@
                                         <a asp-action="UserDetails" asp-route-id="@u.Id" class="btn-action-sm btn-view" title="Détails">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a asp-action="EditUser" asp-route-id="@u.Id" class="btn-action-sm btn-edit" title="Modifier">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        
                                         <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn-action-sm @(u.IsActive ? "btn-toggle-active" : "btn-toggle-inactive")" title="@(u.IsActive ? "Désactiver" : "Activer")">
@@ -540,6 +593,7 @@
                             <tr>
                                 <th>Utilisateur</th>
                                 <th>Email</th>
+                                <th>Département</th>
                                 <th>Statut</th>
                                 <th>Date de création</th>
                                 <th class="text-end">Actions</th>
@@ -549,7 +603,7 @@
                             @foreach (var u in directeurs)
                             {
                                 var photoUrl = GetProfileImageUrl(u);
-                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()">
+                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()" data-role="directeur" data-departements="@(u.Departements?.ToLower() ?? "")">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-avatar">
@@ -570,6 +624,18 @@
                                     </td>
                                     <td class="user-email">@u.Email</td>
                                     <td>
+                                        @if (!string.IsNullOrEmpty(u.Departements))
+                                        {
+                                            <span class="dept-badge">
+                                                <i class="bi bi-building me-1"></i>@u.Departements
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
                                         @if (u.IsActive)
                                         {
                                             <span class="status-badge active"><i class="bi bi-check-circle-fill me-1"></i>Actif</span>
@@ -584,9 +650,7 @@
                                         <a asp-action="UserDetails" asp-route-id="@u.Id" class="btn-action-sm btn-view" title="Détails">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a asp-action="EditUser" asp-route-id="@u.Id" class="btn-action-sm btn-edit" title="Modifier">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                       
                                         <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn-action-sm @(u.IsActive ? "btn-toggle-active" : "btn-toggle-inactive")" title="@(u.IsActive ? "Désactiver" : "Activer")">
@@ -634,7 +698,7 @@
                             @foreach (var u in candidats)
                             {
                                 var photoUrl = GetProfileImageUrl(u);
-                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()">
+                                <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()" data-role="candidat" data-departements="@(u.Departements?.ToLower() ?? "")">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-avatar">
@@ -669,9 +733,7 @@
                                         <a asp-action="UserDetails" asp-route-id="@u.Id" class="btn-action-sm btn-view" title="Détails">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a asp-action="EditUser" asp-route-id="@u.Id" class="btn-action-sm btn-edit" title="Modifier">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        
                                         <form asp-action="ToggleActive" asp-route-id="@u.Id" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn-action-sm @(u.IsActive ? "btn-toggle-active" : "btn-toggle-inactive")" title="@(u.IsActive ? "Désactiver" : "Activer")">
@@ -705,54 +767,82 @@
 
 @section Scripts {
     <script>
-        // Live Search Functionality
+        // Live Search and Filter Functionality
         const searchInput = document.getElementById('liveSearch');
         const clearButton = document.getElementById('clearSearch');
         const searchStats = document.getElementById('searchStats');
         const noResults = document.getElementById('noResults');
         const userRows = document.querySelectorAll('.user-row');
         const sectionCards = document.querySelectorAll('.section-card');
+        const roleFilter = document.getElementById('roleFilter');
+        const departementFilter = document.getElementById('departementFilter');
+        const departementFilterContainer = document.getElementById('departementFilterContainer');
+        
 
         let totalUsers = userRows.length;
 
+        // Show/hide department filter based on role selection
+        roleFilter.addEventListener('change', function() {
+            if (this.value === 'Directeur') {
+                departementFilterContainer.style.display = 'block';
+            } else {
+                departementFilterContainer.style.display = 'none';
+                if (departementFilter) departementFilter.value = '';
+            }
+            performSearch();
+        });
+
+        // Department filter change
+        if (departementFilter) {
+            departementFilter.addEventListener('change', performSearch);
+        }
+
+        // Reset filters
+        resetFiltersBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            roleFilter.value = '';
+            if (departementFilter) departementFilter.value = '';
+            departementFilterContainer.style.display = 'none';
+            performSearch();
+        });
+
         // Search function
-        function performSearch(query) {
-            query = query.toLowerCase().trim();
+        function performSearch() {
+            const query = searchInput.value.toLowerCase().trim();
+            const selectedRole = roleFilter.value;
+            const selectedDepartement = departementFilter ? departementFilter.value : '';
             let visibleCount = 0;
 
             // Show/hide clear button
             clearButton.classList.toggle('visible', query.length > 0);
 
-            if (query.length === 0) {
-                // Show all rows and sections
-                userRows.forEach(row => {
-                    row.classList.remove('hidden-row');
-                    restoreOriginalText(row);
-                });
-                sectionCards.forEach(card => card.classList.remove('hidden-section'));
-                updateCounts();
-                searchStats.textContent = '';
-                noResults.classList.add('hidden-section');
-                return;
-            }
-
             // Filter rows
             userRows.forEach(row => {
                 const name = row.getAttribute('data-name');
                 const email = row.getAttribute('data-email');
+                const role = row.getAttribute('data-role');
+                const departements = row.getAttribute('data-departements') || '';
                 const nameElement = row.querySelector('.user-name');
                 const emailElement = row.querySelector('.user-email');
 
-                if (name.includes(query) || email.includes(query)) {
+                let matchesSearch = !query || name.includes(query) || email.includes(query);
+                let matchesRole = !selectedRole || role.toLowerCase() === selectedRole.toLowerCase();
+                let matchesDepartement = !selectedDepartement || (role.toLowerCase() === 'directeur' && departements.includes(selectedDepartement.toLowerCase()));
+
+                if (matchesSearch && matchesRole && matchesDepartement) {
                     row.classList.remove('hidden-row');
                     visibleCount++;
                     
                     // Highlight matching text
-                    if (nameElement) {
+                    if (query && nameElement) {
                         nameElement.innerHTML = highlightText(nameElement.textContent, query);
+                    } else if (nameElement) {
+                        nameElement.textContent = nameElement.textContent;
                     }
-                    if (emailElement) {
+                    if (query && emailElement) {
                         emailElement.innerHTML = highlightText(emailElement.textContent, query);
+                    } else if (emailElement) {
+                        emailElement.textContent = emailElement.textContent;
                     }
                 } else {
                     row.classList.add('hidden-row');
@@ -763,8 +853,8 @@
             // Update section visibility and counts
             sectionCards.forEach(card => {
                 const visibleRows = card.querySelectorAll('.user-row:not(.hidden-row)');
-                const role = card.getAttribute('data-role');
-                const countElement = document.getElementById('count-' + role);
+                const cardRole = card.getAttribute('data-role');
+                const countElement = document.getElementById('count-' + cardRole);
                 
                 if (visibleRows.length === 0) {
                     card.classList.add('hidden-section');
@@ -777,7 +867,11 @@
             });
 
             // Update stats
-            searchStats.textContent = visibleCount + ' résultat' + (visibleCount > 1 ? 's' : '') + ' sur ' + totalUsers;
+            if (query || selectedRole || selectedDepartement) {
+                searchStats.textContent = visibleCount + ' résultat' + (visibleCount > 1 ? 's' : '') + ' sur ' + totalUsers;
+            } else {
+                searchStats.textContent = '';
+            }
 
             // Show no results message
             if (visibleCount === 0) {
@@ -826,13 +920,11 @@
         }
 
         // Event listeners
-        searchInput.addEventListener('input', (e) => {
-            performSearch(e.target.value);
-        });
+        searchInput.addEventListener('input', performSearch);
 
         clearButton.addEventListener('click', () => {
             searchInput.value = '';
-            performSearch('');
+            performSearch();
             searchInput.focus();
         });
 

@@ -59,6 +59,8 @@
 </head>
 
 <body>
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
 
 @{
     var userRole = Context.Session.GetString("UserRole") ?? "";
@@ -176,6 +178,67 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Toast Notification Script -->
+<script>
+    // Toast Notification System
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toastId = 'toast-' + Date.now();
+        
+        const icon = type === 'success' ? 'bi-check-circle-fill' : 
+                     type === 'error' ? 'bi-x-circle-fill' : 
+                     type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill';
+        
+        const bgClass = type === 'success' ? 'bg-success' : 
+                        type === 'error' ? 'bg-danger' : 
+                        type === 'warning' ? 'bg-warning' : 'bg-info';
+        
+        const textClass = type === 'warning' ? 'text-dark' : 'text-white';
+        
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center ${bgClass} ${textClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi ${icon} me-2"></i>${message}
+                    </div>
+                    <button type="button" class="btn-close ${type === 'warning' ? '' : 'btn-close-white'} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', toastHtml);
+        
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        toast.show();
+        
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+
+    // Display TempData messages as toasts
+    document.addEventListener('DOMContentLoaded', function() {
+        @if (TempData["Success"] != null)
+        {
+            <text>showToast('@Html.Raw(Json.Serialize(TempData["Success"]).ToString().Trim('"'))', 'success');</text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>showToast('@Html.Raw(Json.Serialize(TempData["Error"]).ToString().Trim('"'))', 'error');</text>
+        }
+        @if (TempData["Warning"] != null)
+        {
+            <text>showToast('@Html.Raw(Json.Serialize(TempData["Warning"]).ToString().Trim('"'))', 'warning');</text>
+        }
+        @if (TempData["Info"] != null)
+        {
+            <text>showToast('@Html.Raw(Json.Serialize(TempData["Info"]).ToString().Trim('"'))', 'info');</text>
+        }
+    });
+</script>
+
 <script>
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');

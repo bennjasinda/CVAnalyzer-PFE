@@ -4,6 +4,7 @@
     ViewData["Title"] = "Nouvel utilisateur";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var roles = ViewBag.Roles as List<string> ?? new List<string>();
+    var departements = ViewBag.Departements as List<string> ?? new List<string>();
 }
 
 <style>
@@ -267,6 +268,33 @@
     .alert-validation li:last-child {
         margin-bottom: 0;
     }
+
+    /* Password Toggle Button */
+    .password-toggle {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 4px;
+        z-index: 10;
+    }
+
+    .password-toggle:hover {
+        color: #6b7280;
+    }
+
+    .form-control-wrapper i ~ .form-control {
+        padding-left: 48px;
+    }
+
+    .form-control-wrapper .form-control {
+        padding-right: 48px;
+    }
 </style>
 
 <div class="create-user-container">
@@ -319,10 +347,28 @@
                     </label>
                     <div class="form-control-wrapper">
                         <i class="bi bi-lock-fill"></i>
-                        <input asp-for="MotPasse" type="password" class="form-control" placeholder="••••••••" required />
+                        <input asp-for="MotPasse" type="password" id="passwordInput" class="form-control" placeholder="••••••••" required />
+                        <button type="button" class="password-toggle" onclick="togglePassword('passwordInput', 'passwordToggleIcon')">
+                            <i id="passwordToggleIcon" class="bi bi-eye"></i>
+                        </button>
                     </div>
                     <span asp-validation-for="MotPasse" class="validation-message"></span>
                     <div class="form-hint">Le mot de passe doit contenir au moins 6 caractères.</div>
+                </div>
+
+                <!-- Confirmer Mot de passe -->
+                <div class="form-group">
+                    <label asp-for="ConfirmMotPasse" class="form-label">
+                        Confirmer le mot de passe <span class="required">*</span>
+                    </label>
+                    <div class="form-control-wrapper">
+                        <i class="bi bi-lock-fill"></i>
+                        <input asp-for="ConfirmMotPasse" type="password" id="confirmPasswordInput" class="form-control" placeholder="••••••••" required />
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirmPasswordInput', 'confirmPasswordToggleIcon')">
+                            <i id="confirmPasswordToggleIcon" class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="ConfirmMotPasse" class="validation-message"></span>
                 </div>
 
                 <!-- Rôle -->
@@ -345,15 +391,47 @@
                     <label asp-for="Departements" class="form-label">
                         Départements gérés <span class="required">*</span>
                     </label>
-                    <div class="form-control-wrapper">
+                    
+                    <!-- Department Dropdown -->
+                    <div class="form-control-wrapper mb-3">
                         <i class="bi bi-building-fill"></i>
-                        <textarea asp-for="Departements"
-                                  class="form-control"
-                                  rows="3"
-                                  placeholder="Ex : Informatique, Ressources Humaines, Finance"></textarea>
+                        <select id="departementSelect" class="form-select">
+                            <option value="">-- Sélectionner un département --</option>
+                            @foreach (var dept in departements)
+                            {
+                                <option value="@dept">@dept</option>
+                            }
+                            <option value="__NEW__">➕ Créer un nouveau département</option>
+                        </select>
+                    </div>
+                    
+                    <!-- New Department Input (hidden by default) -->
+                    <div id="newDepartementInput" class="mb-3" style="display:none;">
+                        <div class="form-control-wrapper">
+                            <i class="bi bi-plus-circle-fill"></i>
+                            <input type="text" id="newDepartementName" class="form-control" placeholder="Nom du nouveau département" />
+                        </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" id="saveNewDepartement" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-lg me-1"></i>Créer
+                            </button>
+                            <button type="button" id="cancelNewDepartement" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>Annuler
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Departments Display -->
+                    <div class="form-control-wrapper">
+                        <i class="bi bi-list-check"></i>
+                        
+                        
                     </div>
                     <span asp-validation-for="Departements" class="validation-message"></span>
-                    <div class="form-hint">Entrez les noms des départements séparés par des virgules.</div>
+                    <div class="form-hint">Sélectionnez un ou plusieurs départements dans la liste ci-dessus.</div>
+                    
+                    <!-- Selected Departments Tags -->
+                    <div id="selectedDepartementsTags" class="mt-2"></div>
                 </div>
 
                 <!-- Actions -->
@@ -378,21 +456,160 @@
         // Affiche/masque le champ Départements selon le rôle choisi
         const roleSelect = document.getElementById('roleSelect');
         const departementsGroup = document.getElementById('departementsGroup');
+        const departementSelect = document.getElementById('departementSelect');
+        const newDepartementInput = document.getElementById('newDepartementInput');
+        const newDepartementName = document.getElementById('newDepartementName');
+        const saveNewDepartementBtn = document.getElementById('saveNewDepartement');
+        const cancelNewDepartementBtn = document.getElementById('cancelNewDepartement');
+        const departementsTextarea = document.getElementById('departementsTextarea');
+        const selectedDepartementsTags = document.getElementById('selectedDepartementsTags');
+        
+        let selectedDepartements = [];
 
         function toggleDepartements() {
             if (roleSelect.value === 'Directeur') {
                 departementsGroup.style.display = 'block';
-                departementsGroup.querySelector('textarea').setAttribute('required', 'required');
+                departementsTextarea.setAttribute('required', 'required');
             } else {
                 departementsGroup.style.display = 'none';
-                departementsGroup.querySelector('textarea').removeAttribute('required');
-                departementsGroup.querySelector('textarea').value = '';
+                departementsTextarea.removeAttribute('required');
+                departementsTextarea.value = '';
+                selectedDepartements = [];
+                updateDepartementsDisplay();
             }
         }
 
         roleSelect.addEventListener('change', toggleDepartements);
 
+        // Handle department selection
+        departementSelect.addEventListener('change', function() {
+            const value = this.value;
+            
+            if (value === '__NEW__') {
+                // Show new department input
+                newDepartementInput.style.display = 'block';
+                newDepartementName.focus();
+                this.value = '';
+            } else if (value && !selectedDepartements.includes(value)) {
+                // Add to selected departments
+                selectedDepartements.push(value);
+                updateDepartementsDisplay();
+                this.value = '';
+            }
+        });
+
+        // Cancel new department
+        cancelNewDepartementBtn.addEventListener('click', function() {
+            newDepartementInput.style.display = 'none';
+            newDepartementName.value = '';
+        });
+
+        // Save new department via AJAX
+        saveNewDepartementBtn.addEventListener('click', async function() {
+            const nom = newDepartementName.value.trim();
+            
+            if (!nom) {
+                if (typeof showToast === 'function') {
+                    showToast('Veuillez entrer un nom de département.', 'warning');
+                } else {
+                    alert('Veuillez entrer un nom de département.');
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch('@Url.Action("CreateDepartement", "Admin")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: JSON.stringify({ nom: nom })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Add new option to dropdown
+                    const option = document.createElement('option');
+                    option.value = result.nom;
+                    option.textContent = result.nom;
+                    
+                    // Insert before the "Create new" option
+                    const newOption = departementSelect.querySelector('option[value="__NEW__"]');
+                    departementSelect.insertBefore(option, newOption);
+                    
+                    // Add to selected departments
+                    selectedDepartements.push(result.nom);
+                    updateDepartementsDisplay();
+                    
+                    // Reset and hide input
+                    newDepartementInput.style.display = 'none';
+                    newDepartementName.value = '';
+                    
+                    if (typeof showToast === 'function') {
+                        showToast('Département créé avec succès.', 'success');
+                    }
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast(result.message, 'error');
+                    } else {
+                        alert(result.message);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                if (typeof showToast === 'function') {
+                    showToast('Une erreur est survenue lors de la création du département.', 'error');
+                } else {
+                    alert('Une erreur est survenue lors de la création du département.');
+                }
+            }
+        });
+
+        // Update departments display
+        function updateDepartementsDisplay() {
+            // Update textarea
+            departementsTextarea.value = selectedDepartements.join(', ');
+            
+            // Update tags
+            selectedDepartementsTags.innerHTML = selectedDepartements.map((dept, index) => `
+                <span class="badge bg-primary me-2 mb-2" style="font-size: 13px; padding: 8px 12px;">
+                    ${dept}
+                    <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 10px;" onclick="removeDepartement(${index})" aria-label="Remove"></button>
+                </span>
+            `).join('');
+        }
+
+        // Remove department from selection
+        window.removeDepartement = function(index) {
+            selectedDepartements.splice(index, 1);
+            updateDepartementsDisplay();
+        };
+
+        // Password Toggle Function
+        window.togglePassword = function(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        };
+
         // Au chargement (cas de retour avec erreur de validation)
         toggleDepartements();
+        
+        // Parse existing departments if any (for validation error case)
+        if (departementsTextarea && departementsTextarea.value) {
+            selectedDepartements = departementsTextarea.value.split(',').map(d => d.trim()).filter(d => d);
+            updateDepartementsDisplay();
+        }
     </script>
 }

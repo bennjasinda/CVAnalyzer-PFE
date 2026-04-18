@@ -120,11 +120,7 @@
 </style>
 
 <div class="dashboard-container" id="dashboardContainer">
-    <!-- Theme Toggle -->
-    <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">
-        <i class="bi bi-sun-fill" id="themeIcon"></i>
-        <span id="themeText">Thème clair</span>
-    </button>
+    
 
     <!-- Dashboard Header -->
     <div class="dashboard-header">
@@ -226,18 +222,6 @@
             const icon = document.getElementById('themeIcon');
             const text = document.getElementById('themeText');
             
-            container.classList.toggle('dark-theme');
-            const isDark = container.classList.contains('dark-theme');
-            
-            // Update icon and text
-            icon.className = isDark ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
-            text.textContent = isDark ? 'Thème sombre' : 'Thème clair';
-            
-            // Save preference
-            localStorage.setItem('rhDashboardTheme', isDark ? 'dark' : 'light');
-            
-            // Update charts colors
-            updateChartsTheme(isDark);
         }
 
         // Load saved theme

@@ -68,7 +68,16 @@ namespace Administration.Controllers
 
         // ================= CRÉER UN POSTE =================
         [HttpGet]
-        public IActionResult CreatePoste() => View(new OffreEmploi());
+        public IActionResult CreatePoste()
+        {
+            // Get departments from database
+            ViewBag.Departements = _context.Departements
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.Nom)
+                .Select(d => d.Nom)
+                .ToList();
+            return View(new OffreEmploi());
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -86,6 +95,13 @@ namespace Administration.Controllers
                 TempData["Success"] = "Poste créé avec succès.";
                 return RedirectToAction("Postes");
             }
+            
+            // Re-populate departments on validation error
+            ViewBag.Departements = _context.Departements
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.Nom)
+                .Select(d => d.Nom)
+                .ToList();
             return View(model);
         }
 
@@ -95,6 +111,13 @@ namespace Administration.Controllers
         {
             var offre = _context.OffresEmploi.Find(id);
             if (offre == null) return NotFound();
+            
+            // Get departments from database
+            ViewBag.Departements = _context.Departements
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.Nom)
+                .Select(d => d.Nom)
+                .ToList();
             return View(offre);
         }
 
@@ -109,6 +132,13 @@ namespace Administration.Controllers
                 TempData["Success"] = "Poste modifié avec succès.";
                 return RedirectToAction("Postes");
             }
+            
+            // Re-populate departments on validation error
+            ViewBag.Departements = _context.Departements
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.Nom)
+                .Select(d => d.Nom)
+                .ToList();
             return View(model);
         }
 
@@ -117,12 +147,32 @@ namespace Administration.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeletePoste(int id)
         {
-            var offre = _context.OffresEmploi.Find(id);
+            var offre = _context.OffresEmploi
+                .Include(o => o.Cvs)
+                .FirstOrDefault(o => o.Id == id);
+            
             if (offre != null)
             {
-                _context.OffresEmploi.Remove(offre);
-                _context.SaveChanges();
-                TempData["Success"] = "Poste supprimé.";
+                try
+                {
+                    // Delete related CVs first ( cascade delete will handle Matches)
+                    if (offre.Cvs != null && offre.Cvs.Any())
+                    {
+                        _context.Cvs.RemoveRange(offre.Cvs);
+                    }
+                    
+                    _context.OffresEmploi.Remove(offre);
+                    _context.SaveChanges();
+                    TempData["Success"] = "Poste supprimé avec succès.";
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "Erreur lors de la suppression du poste.";
+                }
+            }
+            else
+            {
+                TempData["Error"] = "Poste non trouvé.";
             }
             return RedirectToAction("Postes");
         }

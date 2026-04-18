@@ -32,17 +32,52 @@ namespace Administration.Controllers
             return View(stats);
         }
 
-        // ================= LISTE UTILISATEURS (avec recherche) =================
-        public IActionResult Users(string? search)
+        // ================= LISTE UTILISATEURS (avec recherche et filtres) =================
+        public IActionResult Users(string? search, string? role, string? departement)
         {
-            var query = _context.Utilisateurs.AsQueryable();
+            // Get current logged-in admin ID from session
+            var currentUserId = int.Parse(HttpContext.Session.GetString("UserId") ?? "0");
+            
+            var query = _context.Utilisateurs
+                .Where(u => u.Id != currentUserId) // Exclude current logged-in admin
+                .AsQueryable();
+            
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(u => u.NomUtilisateur.Contains(search) ||
                                          u.Email.Contains(search) ||
                                          u.Role.Contains(search));
             }
+            
             ViewBag.Search = search;
+            ViewBag.RoleFilter = role;
+            ViewBag.DepartementFilter = departement;
+            
+            // Get unique departments from existing directors
+            var departementsList = _context.Utilisateurs
+                .Where(u => u.Role == "Directeur" && u.Departements != null)
+                .Select(u => u.Departements)
+                .AsEnumerable()
+                .SelectMany(d => d.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(d => d.Trim())
+                .Where(d => !string.IsNullOrWhiteSpace(d))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(d => d)
+                .ToList();
+            
+            // Also include departments from the Departement table
+            var dbDepartements = _context.Departements
+                .Where(d => d.IsActive)
+                .Select(d => d.Nom)
+                .ToList();
+            
+            var allDepartements = departementsList
+                .Union(dbDepartements, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(d => d)
+                .ToList();
+            
+            ViewBag.DepartementsList = allDepartements;
+            
             return View(query.OrderBy(u => u.Id).ToList());
         }
 
@@ -59,6 +94,11 @@ namespace Administration.Controllers
         public IActionResult CreateUser()
         {
             ViewBag.Roles = new List<string> { "Admin", "RH", "Directeur" };
+            ViewBag.Departements = _context.Departements
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.Nom)
+                .Select(d => d.Nom)
+                .ToList();
             return View(new CreateUserViewModel());
         }
 
@@ -74,6 +114,11 @@ namespace Administration.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Roles = new List<string> { "Admin", "RH", "Directeur" };
+                ViewBag.Departements = _context.Departements
+                    .Where(d => d.IsActive)
+                    .OrderBy(d => d.Nom)
+                    .Select(d => d.Nom)
+                    .ToList();
                 return View(model);
             }
 
@@ -81,6 +126,11 @@ namespace Administration.Controllers
             {
                 ModelState.AddModelError("", "Ce nom d'utilisateur existe déjà.");
                 ViewBag.Roles = new List<string> { "Admin", "RH", "Directeur" };
+                ViewBag.Departements = _context.Departements
+                    .Where(d => d.IsActive)
+                    .OrderBy(d => d.Nom)
+                    .Select(d => d.Nom)
+                    .ToList();
                 return View(model);
             }
 
@@ -189,6 +239,12 @@ namespace Administration.Controllers
             {
                 user.IsActive = !user.IsActive;
                 _context.SaveChanges();
+                var status = user.IsActive ? "activé" : "désactivé";
+                TempData["Success"] = $"Utilisateur {status} avec succès.";
+            }
+            else
+            {
+                TempData["Error"] = "Utilisateur non trouvé.";
             }
             return RedirectToAction("Users");
         }
@@ -264,6 +320,48 @@ namespace Administration.Controllers
 
             if (offre == null) return NotFound();
             return View(offre);
+        }
+
+        // ================= API: CRÉER UN NOUVEAU DÉPARTEMENT =================
+        [HttpPost]
+        public IActionResult CreateDepartement([FromBody] CreateDepartementRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Nom))
+            {
+                return Json(new { success = false, message = "Le nom du département est requis." });
+            }
+
+            // Check if department already exists
+            if (_context.Departements.Any(d => d.Nom.ToLower() == request.Nom.ToLower().Trim()))
+            {
+                return Json(new { success = false, message = "Ce département existe déjà." });
+            }
+
+            var departement = new Departement
+            {
+                Nom = request.Nom.Trim(),
+                Description = request.Description?.Trim(),
+                DateCreation = DateTime.Now,
+                IsActive = true
+            };
+
+            _context.Departements.Add(departement);
+            _context.SaveChanges();
+
+            return Json(new { success = true, message = "Département créé avec succès.", id = departement.Id, nom = departement.Nom });
+        }
+
+        // ================= API: GET ALL DEPARTEMENTS =================
+        [HttpGet]
+        public IActionResult GetDepartements()
+        {
+            var departements = _context.Departements
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.Nom)
+                .Select(d => new { d.Id, d.Nom })
+                .ToList();
+
+            return Json(departements);
         }
 
         // ================= RÉSULTAT DÉTAILLÉ D'UN CANDIDAT =================
