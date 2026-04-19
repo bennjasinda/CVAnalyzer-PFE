@@ -492,7 +492,7 @@
                             </div>
                         </div>
                         <div class="candidate-score">
-                            <span class="score-value">@(match != null ? score.ToString("F0") + "%" : "—")</span>
+                            <span class="score-value">@(match != null ? score.ToString("F0") + "%" : "0%")</span>
                             <span class="score-label">Score</span>
                         </div>
                         <a asp-action="CvResult" asp-route-offreId="@Model.Id" asp-route-cvId="@cv.Id" class="btn-view">

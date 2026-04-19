@@ -848,7 +848,7 @@
                     @foreach (var cv in Model.Cvs)
                     {
                         var match = cv.Matches.FirstOrDefault();
-                        var score = match?.GlobalScore ?? ((cv.Id % 40) + 60);
+                        var score = match?.GlobalScore ?? 0;
                         var scoreClass = score >= 80 ? "high" : (score >= 70 ? "medium" : "low");
                         
                         var avatarColors = new[] { "#f59e0b", "#fbbf24", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6", "#14b8a6", "#ec4899" };

@@ -469,7 +469,6 @@ C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\t9tkjh5pd
 C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\0td4bw7cjo-{0}-17e0s5678h-17e0s5678h.gz
 C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\28cphc6pue-{0}-6c7yrup00a-6c7yrup00a.gz
 C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\m367l2rb0j-{0}-l6r2495p23-l6r2495p23.gz
-C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\15ymyozmru-{0}-333mm1te8g-333mm1te8g.gz
 C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\33cecq03m0-{0}-jfsiqqwiad-jfsiqqwiad.gz
 C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\zybjyd16hh-{0}-9d6ngqvd4f-9d6ngqvd4f.gz
 C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\nk2bdi5ek4-{0}-9d6ngqvd4f-9d6ngqvd4f.gz
@@ -562,3 +561,4 @@ C:\Users\bennj\Desktop\CvParsing\Candidat\bin\Debug\net10.0\runtimes\unix\lib\ne
 C:\Users\bennj\Desktop\CvParsing\Candidat\bin\Debug\net10.0\runtimes\win\lib\net9.0\Microsoft.Data.SqlClient.dll
 C:\Users\bennj\Desktop\CvParsing\Candidat\bin\Debug\net10.0\runtimes\win\lib\net9.0\System.Windows.Extensions.dll
 C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\CvParsing.sourcelink.json
+C:\Users\bennj\Desktop\CvParsing\Candidat\obj\Debug\net10.0\compressed\15ymyozmru-{0}-njcteedm8u-njcteedm8u.gz

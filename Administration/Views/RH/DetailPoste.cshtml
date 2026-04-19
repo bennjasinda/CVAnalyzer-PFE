@@ -2,6 +2,8 @@
 @{
     ViewData["Title"] = "Détail du poste";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var cvByUserId = ViewBag.CvByUserId as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var scoreByUserId = ViewBag.ScoreByUserId as Dictionary<int, float> ?? new Dictionary<int, float>();
 }
 
 <style>
@@ -863,9 +865,9 @@
                         var isActive = candidat.IsActive;
                         var statusClass = isActive ? "status-active" : "status-inactive";
                         
-                        // Static score for demonstration (would come from database in real implementation)
-                        var score = (candidat.Id % 40) + 60; // Score between 60-99
+                        var score = scoreByUserId.TryGetValue(candidat.Id, out var s) ? s : 0;
                         var scoreClass = score >= 80 ? "high" : (score >= 70 ? "medium" : "low");
+                        var cvId = cvByUserId.TryGetValue(candidat.Id, out var userCvId) ? userCvId : 0;
 
                         <tr>
                             <td>
@@ -887,12 +889,22 @@
                             
                             <td>
                                 <div class="candidate-actions">
-                                    <a asp-action="ProfilCandidat" asp-route-id="@candidat.Id" class="cand-btn btn-view" title="Voir profil">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
+                                    @if (cvId > 0)
+                                    {
+                                        <a asp-action="CvResult" asp-route-offreId="@Model.Offre.Id" asp-route-cvId="@cvId" class="cand-btn btn-view" title="Voir analyse">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-action="ProfilCandidat" asp-route-id="@candidat.Id" class="cand-btn btn-view" title="Voir profil">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    }
                                     <a href="mailto:@candidat.Email" class="cand-btn btn-download" title="Contacter">
                                         <i class="bi bi-envelope"></i>
                                     </a>
+                                    
                                     @if (User.IsInRole("Admin"))
                                     {
                                         <form asp-action="SupprimerCandidat" asp-route-id="@candidat.Id" method="post" 
@@ -975,9 +987,9 @@
                         var isActive = candidat.IsActive;
                         var statusClass = isActive ? "status-active" : "status-inactive";
                         
-                        // Static score for demonstration (would come from database in real implementation)
-                        var score2 = ((candidat.Id + 5) % 40) + 60; // Score between 60-99 (different from first table)
+                        var score2 = scoreByUserId.TryGetValue(candidat.Id, out var s2) ? s2 : 0;
                         var scoreClass2 = score2 >= 80 ? "high" : (score2 >= 70 ? "medium" : "low");
+                        var cvId2 = cvByUserId.TryGetValue(candidat.Id, out var userCvId2) ? userCvId2 : 0;
 
                         <tr>
                             <td>
@@ -999,12 +1011,22 @@
                             
                             <td>
                                 <div class="candidate-actions">
-                                    <a asp-action="ProfilCandidat" asp-route-id="@candidat.Id" class="cand-btn btn-view" title="Voir profil">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
+                                    @if (cvId2 > 0)
+                                    {
+                                        <a asp-action="CvResult" asp-route-offreId="@Model.Offre.Id" asp-route-cvId="@cvId2" class="cand-btn btn-view" title="Voir analyse">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-action="ProfilCandidat" asp-route-id="@candidat.Id" class="cand-btn btn-view" title="Voir profil">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    }
                                     <a href="mailto:@candidat.Email" class="cand-btn btn-download" title="Contacter">
                                         <i class="bi bi-envelope"></i>
                                     </a>
+                                    
                                     @if (User.IsInRole("Admin"))
                                     {
                                         <form asp-action="SupprimerCandidat" asp-route-id="@candidat.Id" method="post" 

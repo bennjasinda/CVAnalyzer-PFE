@@ -53,6 +53,7 @@ public class ProfileController : Controller
         var appsQuery = _context.Cvs
             .AsNoTracking()
             .Include(c => c.Offre)
+            .Include(c => c.Matches)
             .Where(c => c.UtilisateurId == userId);
 
         var totalApps = await appsQuery.CountAsync();
@@ -62,14 +63,21 @@ public class ProfileController : Controller
             .Take(pageSize)
             .ToListAsync();
 
-        var applications = cvs.Select(c => new ApplicationRowViewModel
-        {
-            CvId = c.Id,
-            OffreId = c.OffreId,
-            TitrePoste = c.Offre?.Titre ?? "—",
-            DepartementOuEntreprise = c.Offre?.Departement ?? "—",
-            DateCandidature = c.UploadDate,
-            Statut = "Pending"
+        var applications = cvs.Select(c => {
+            var match = c.Matches.FirstOrDefault(m => m.OffreId == c.OffreId);
+            return new ApplicationRowViewModel
+            {
+                CvId = c.Id,
+                OffreId = c.OffreId,
+                TitrePoste = c.Offre?.Titre ?? "—",
+                DepartementOuEntreprise = c.Offre?.Departement ?? "—",
+                DateCandidature = c.UploadDate,
+                Statut = "Pending",
+                GlobalScore = match?.GlobalScore ?? 0,
+                CompetenceScore = match?.CompetenceScore ?? 0,
+                DiplomeScore = match?.DiplomeScore ?? 0,
+                ExperienceScore = match?.ExperienceScore ?? 0
+            };
         }).ToList();
 
         var vm = new ProfilePageViewModel
@@ -106,6 +114,7 @@ public class ProfileController : Controller
         var appsQuery = _context.Cvs
             .AsNoTracking()
             .Include(c => c.Offre)
+            .Include(c => c.Matches)
             .Where(c => c.UtilisateurId == userId);
 
         var totalApps = await appsQuery.CountAsync();
@@ -115,14 +124,21 @@ public class ProfileController : Controller
             .Take(pageSize)
             .ToListAsync();
 
-        var applications = cvs.Select(c => new ApplicationRowViewModel
-        {
-            CvId = c.Id,
-            OffreId = c.OffreId,
-            TitrePoste = c.Offre?.Titre ?? "—",
-            DepartementOuEntreprise = c.Offre?.Departement ?? "—",
-            DateCandidature = c.UploadDate,
-            Statut = "Pending"
+        var applications = cvs.Select(c => {
+            var match = c.Matches.FirstOrDefault(m => m.OffreId == c.OffreId);
+            return new ApplicationRowViewModel
+            {
+                CvId = c.Id,
+                OffreId = c.OffreId,
+                TitrePoste = c.Offre?.Titre ?? "—",
+                DepartementOuEntreprise = c.Offre?.Departement ?? "—",
+                DateCandidature = c.UploadDate,
+                Statut = "Pending",
+                GlobalScore = match?.GlobalScore ?? 0,
+                CompetenceScore = match?.CompetenceScore ?? 0,
+                DiplomeScore = match?.DiplomeScore ?? 0,
+                ExperienceScore = match?.ExperienceScore ?? 0
+            };
         }).ToList();
 
         var vm = new ProfilePageViewModel

@@ -324,6 +324,8 @@ namespace Administration.Controllers
         // Alias pour DetailPoste (sans 's') pour éviter les erreurs 404
         public IActionResult DetailPoste(int id)
         {
+            MatchIntegrationHelper.EnsureMatchesForOffreAsync(_context, id).GetAwaiter().GetResult();
+
             var offre = _context.OffresEmploi
                 .Include(o => o.Cvs)
                     .ThenInclude(c => c.DonneesCv)
@@ -338,6 +340,8 @@ namespace Administration.Controllers
         // ================= DÉTAIL D'UN POSTE + CANDIDATS =================
         public IActionResult DetailsPoste(int id)
         {
+            MatchIntegrationHelper.EnsureMatchesForOffreAsync(_context, id).GetAwaiter().GetResult();
+
             var offre = _context.OffresEmploi
                 .Include(o => o.Cvs)
                     .ThenInclude(c => c.DonneesCv)
@@ -394,6 +398,9 @@ namespace Administration.Controllers
         // ================= RÉSULTAT DÉTAILLÉ D'UN CANDIDAT =================
         public IActionResult CvResult(int offreId, int cvId)
         {
+            MatchIntegrationHelper.EnsureMatchForCvAsync(_context, offreId, cvId).GetAwaiter().GetResult();
+            _context.SaveChanges();
+
             var match = _context.Matches
                 .Include(m => m.Cv)
                     .ThenInclude(c => c.DonneesCv)

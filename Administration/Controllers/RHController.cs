@@ -46,23 +46,46 @@ namespace Administration.Controllers
         // ✅ ACTION AJOUTÉE
         public async Task<IActionResult> DetailPoste(int id)
         {
-            var offre = await _context.OffresEmploi.FindAsync(id);
+            await MatchIntegrationHelper.EnsureMatchesForOffreAsync(_context, id);
+
+            var offre = await _context.OffresEmploi
+                .Include(o => o.Cvs)
+                    .ThenInclude(c => c.Utilisateur)
+                .Include(o => o.Cvs)
+                    .ThenInclude(c => c.Matches)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
             if (offre == null)
             {
                 return NotFound();
             }
 
-            // Récupérer les candidats (utilisateurs avec rôle Candidat)
-            var candidats = await _context.Utilisateurs
-                .Where(u => u.Role == "Candidat")
+            var candidats = offre.Cvs
+                .Where(cv => cv.Utilisateur != null)
+                .Select(cv => cv.Utilisateur)
+                .DistinctBy(u => u.Id)
                 .OrderByDescending(u => u.DateCreation)
-                .ToListAsync();
+                .ToList();
+
+            var cvByUserId = offre.Cvs
+                .GroupBy(cv => cv.UtilisateurId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(cv => cv.UploadDate).First().Id);
+
+            var scoreByUserId = offre.Cvs
+                .GroupBy(cv => cv.UtilisateurId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.SelectMany(cv => cv.Matches).OrderByDescending(m => m.GlobalScore).FirstOrDefault()?.GlobalScore ?? 0f
+                );
 
             var viewModel = new PosteDetailViewModel
             {
                 Offre = offre,
                 Candidats = candidats
             };
+
+            ViewBag.CvByUserId = cvByUserId;
+            ViewBag.ScoreByUserId = scoreByUserId;
 
             return View(viewModel);
         }
@@ -204,6 +227,8 @@ namespace Administration.Controllers
 
             if (offreId.HasValue)
             {
+                MatchIntegrationHelper.EnsureMatchesForOffreAsync(_context, offreId.Value).GetAwaiter().GetResult();
+
                 var matches = _context.Matches
                     .Include(m => m.Cv)
                         .ThenInclude(c => c.DonneesCv)
@@ -218,6 +243,22 @@ namespace Administration.Controllers
             return View(new List<Match>());
         }
 
+        // ================= RÉSULTAT DÉTAILLÉ D'UN CANDIDAT =================
+        public IActionResult CvResult(int offreId, int cvId)
+        {
+            MatchIntegrationHelper.EnsureMatchForCvAsync(_context, offreId, cvId).GetAwaiter().GetResult();
+            _context.SaveChanges();
+
+            var match = _context.Matches
+                .Include(m => m.Cv)
+                    .ThenInclude(c => c.DonneesCv)
+                .Include(m => m.Offre)
+                .FirstOrDefault(m => m.OffreId == offreId && m.CvId == cvId);
+
+            if (match == null) return NotFound();
+            return View("~/Views/Admin/CvResult.cshtml", match);
+        }
+
         // ================= PROFIL CANDIDAT =================
         [HttpGet]
         public async Task<IActionResult> ProfilCandidat(int id)
@@ -226,6 +267,21 @@ namespace Administration.Controllers
             if (candidat == null || candidat.Role != "Candidat")
             {
                 return NotFound();
+            }
+
+            var latestCv = await _context.Cvs
+                .Include(c => c.Matches)
+                .Where(c => c.UtilisateurId == id)
+                .OrderByDescending(c => c.UploadDate)
+                .FirstOrDefaultAsync();
+
+            var latestMatch = latestCv?.Matches
+                .OrderByDescending(m => m.GlobalScore)
+                .FirstOrDefault();
+
+            if (latestMatch != null)
+            {
+                return RedirectToAction(nameof(CvResult), new { offreId = latestMatch.OffreId, cvId = latestMatch.CvId });
             }
 
             return View(candidat);
