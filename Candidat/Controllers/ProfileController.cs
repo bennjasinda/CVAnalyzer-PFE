@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CvParsing.Data;
+using CvParsing.Helpers;
 using CvParsing.Models;
 using CvParsing.Models.ViewModels;
 using CvParsing.Services;
@@ -238,9 +239,9 @@ public class ProfileController : Controller
             return RedirectToAction(nameof(Index), new { tab = "password" });
         }
 
-        if (nouveauMotDePasse.Length < 6)
+        if (!PasswordRules.TryValidate(nouveauMotDePasse, out var pwdErr))
         {
-            TempData["PasswordError"] = "Le mot de passe doit contenir au moins 6 caractères.";
+            TempData["PasswordError"] = pwdErr ?? "Mot de passe invalide.";
             return RedirectToAction(nameof(Index), new { tab = "password" });
         }
 

@@ -368,9 +368,9 @@
 <div class="profile-container">
     <!-- Header -->
     <div class="profile-header d-flex justify-content-between align-items-center">
-        <h4>View Profile</h4>
+        <h4>Mon profil</h4>
         <div class="breadcrumb-custom">
-            <a href="#">Dashboard</a> - View Profile
+            <a asp-controller="RH" asp-action="Dashboard">Tableau de bord</a> / Mon profil
         </div>
     </div>
 
@@ -395,10 +395,10 @@
                 <div class="profile-email">@Model.Email</div>
             </div>
             <div class="personal-info">
-                <div class="personal-info-title">Personal Info</div>
+                <div class="personal-info-title">Informations personnelles</div>
                 
                 <div class="info-row">
-                    <div class="info-label">Full Name</div>
+                    <div class="info-label">Nom</div>
                     <div class="info-value">: @Model.NomUtilisateur</div>
                 </div>
                 
@@ -417,49 +417,54 @@
         <div class="profile-main">
             <!-- Tabs -->
             <div class="profile-tabs">
-                <button class="tab-item active">Edit Profile</button>
-                <button class="tab-item">Change Password</button>
-                <button class="tab-item">Notification Settings</button>
+                <button type="button" class="tab-item active" onclick="showTab('profile')">Modifier le profil</button>
+                <button type="button" class="tab-item" onclick="showTab('password')">Changer le mot de passe</button>
             </div>
 
-            <form method="post" enctype="multipart/form-data">
+            <form method="post" enctype="multipart/form-data" id="profileForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CurrentPhotoUrl" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 mb-4"></div>
 
+                <div id="profileSection">
                 <!-- Profile Image -->
                 <div class="profile-image-section">
-                    <label class="profile-image-label">Profile Image</label>
+                    <label class="profile-image-label">Photo de profil</label>
                     <div class="image-upload-wrapper">
-                        <div class="image-upload">
-                            <i class="bi bi-person"></i>
+                        <div class="image-upload" onclick="document.getElementById('rhProfileImage').click()">
+                            @if (!string.IsNullOrEmpty(Model.CurrentPhotoUrl))
+                            {
+                                <img src="@Model.CurrentPhotoUrl" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-person"></i>
+                            }
                         </div>
                         <div class="image-upload-camera">
                             <i class="bi bi-camera" style="font-size: 14px;"></i>
                         </div>
-                        <input type="file" asp-for="ProfileImage" style="display: none;" accept="image/*" />
+                        <input type="file" id="rhProfileImage" asp-for="ProfileImage" style="display: none;" accept="image/*" />
                     </div>
                 </div>
 
                 <!-- Form Fields -->
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Full Name <span class="required">*</span></label>
-                        <input type="text" asp-for="NomUtilisateur" class="form-control-custom" placeholder="Enter Full Name" readonly />
+                        <label class="form-label">Nom d'utilisateur <span class="required">*</span></label>
+                        <input type="text" asp-for="NomUtilisateur" class="form-control-custom" placeholder="Nom d'utilisateur" required />
+                        <span asp-validation-for="NomUtilisateur" class="text-danger small"></span>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Email <span class="required">*</span></label>
-                        <input type="email" asp-for="Email" class="form-control-custom" placeholder="Enter email address" />
+                        <input type="email" asp-for="Email" class="form-control-custom" placeholder="Adresse email" />
                         <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
-
-                    
-
-
-
+                </div>
                 </div>
 
-                <!-- Password Section (Hidden by default, shown when Change Password tab is clicked) -->
                 <div id="passwordSection" style="display: none;">
                     <div class="form-section-title">Changer le mot de passe</div>
                     <div class="form-grid">
@@ -498,8 +503,8 @@
 
                 <!-- Action Buttons -->
                 <div class="form-actions">
-                    <button type="button" class="btn-cancel">Cancel</button>
-                    <button type="submit" class="btn-save">Save</button>
+                    <a asp-controller="RH" asp-action="Dashboard" class="btn-cancel">Annuler</a>
+                    <button type="submit" class="btn-save">Enregistrer les modifications</button>
                 </div>
             </form>
         </div>
@@ -525,36 +530,31 @@
             }
         }
 
-        // Tab switching
-        document.querySelectorAll('.tab-item').forEach(tab => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                const tabIndex = Array.from(this.parentNode.children).indexOf(this);
-                const passwordSection = document.getElementById('passwordSection');
-                
-                if (tabIndex === 1) {
-                    passwordSection.style.display = 'block';
-                } else {
-                    passwordSection.style.display = 'none';
-                }
-            });
-        });
+        function showTab(tab) {
+            const profileSection = document.getElementById('profileSection');
+            const passwordSection = document.getElementById('passwordSection');
+            const tabs = document.querySelectorAll('.tab-item');
+            tabs.forEach(t => t.classList.remove('active'));
+            if (tab === 'profile') {
+                profileSection.style.display = 'block';
+                passwordSection.style.display = 'none';
+                tabs[0].classList.add('active');
+            } else {
+                profileSection.style.display = 'none';
+                passwordSection.style.display = 'block';
+                tabs[1].classList.add('active');
+            }
+        }
 
-        // Image upload preview
-        document.querySelector('.image-upload').addEventListener('click', function() {
-            document.querySelector('input[type="file"]').click();
-        });
-
-        document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+        document.getElementById('rhProfileImage').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function(ev) {
                     const upload = document.querySelector('.image-upload');
-                    upload.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    upload.innerHTML = `<img src="${ev.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                     upload.innerHTML += `<div class="image-upload-camera"><i class="bi bi-camera" style="font-size: 14px;"></i></div>`;
+                    upload.onclick = function() { document.getElementById('rhProfileImage').click(); };
                 };
                 reader.readAsDataURL(file);
                 

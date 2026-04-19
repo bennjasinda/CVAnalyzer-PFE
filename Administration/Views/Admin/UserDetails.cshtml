@@ -27,7 +27,8 @@
         _           => "#6366f1"
     };
     
-    string photoUrl = !string.IsNullOrEmpty(Model.PhotoUrl) ? Model.PhotoUrl : null;
+    var candidatBase = ViewBag.CandidatPublicBaseUrl as string ?? "";
+    string? photoUrl = ProfileImageUrlHelper.ResolveDisplayUrl(Model.PhotoUrl, Model.Role, candidatBase);
 }
 
 <style>
@@ -247,14 +248,14 @@
     <div class="profile-card">
         <!-- Header with Avatar -->
         <div class="profile-header">
-            <div class="profile-avatar">
+            <div class="profile-avatar" style="position:relative;">
+                @{
+                    var udInitial = Model.NomUtilisateur.Length > 0 ? Model.NomUtilisateur.Substring(0, 1).ToUpper() : "?";
+                }
+                <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">@udInitial</span>
                 @if (!string.IsNullOrEmpty(photoUrl))
                 {
-                    <img src="@photoUrl" alt="@Model.NomUtilisateur" />
-                }
-                else
-                {
-                    @Model.NomUtilisateur.Substring(0, 1).ToUpper()
+                    <img src="@photoUrl" alt="" loading="lazy" style="position:relative;z-index:1;width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.remove();" />
                 }
             </div>
             <div class="profile-name">@Model.NomUtilisateur</div>

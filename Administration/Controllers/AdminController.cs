@@ -1,5 +1,6 @@
 using Administration.Data;
 using Administration.Filters;
+using Administration.Helpers;
 using Administration.Models;
 using Administration.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +12,12 @@ namespace Administration.Controllers
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AdminController(ApplicationDbContext context)
+        public AdminController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         // ================= DASHBOARD =================
@@ -77,7 +80,8 @@ namespace Administration.Controllers
                 .ToList();
             
             ViewBag.DepartementsList = allDepartements;
-            
+            ViewBag.CandidatPublicBaseUrl = _configuration["CandidatMedia:PublicBaseUrl"] ?? "";
+
             return View(query.OrderBy(u => u.Id).ToList());
         }
 
@@ -86,6 +90,7 @@ namespace Administration.Controllers
         {
             var user = _context.Utilisateurs.Find(id);
             if (user == null) return NotFound();
+            ViewBag.CandidatPublicBaseUrl = _configuration["CandidatMedia:PublicBaseUrl"] ?? "";
             return View(user);
         }
 
@@ -222,7 +227,29 @@ namespace Administration.Controllers
             user.Departements   = model.Role == "Directeur" ? model.Departements : null;
 
             if (!string.IsNullOrWhiteSpace(model.NewPassword))
+            {
+                if (!PasswordRules.TryValidate(model.NewPassword, out var pwdErr))
+                {
+                    ModelState.AddModelError(nameof(model.NewPassword), pwdErr ?? "Mot de passe invalide.");
+                    ViewBag.Roles = new List<string> { "Admin", "RH", "Directeur" };
+                    var userForViewBag = _context.Utilisateurs.Find(model.Id);
+                    if (userForViewBag != null)
+                    {
+                        ViewBag.PhotoUrl = userForViewBag.PhotoUrl;
+                        ViewBag.UserInitial = userForViewBag.NomUtilisateur.Substring(0, 1).ToUpper();
+                        ViewBag.AvatarColor = userForViewBag.Role switch
+                        {
+                            "Admin" => "#ef4444",
+                            "RH" => "#10b981",
+                            "Directeur" => "#f59e0b",
+                            _ => "#6366f1"
+                        };
+                    }
+                    return View(model);
+                }
+
                 user.MotPasse = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+            }
 
             _context.SaveChanges();
             TempData["Success"] = "Utilisateur modifié avec succès.";
@@ -404,9 +431,23 @@ namespace Administration.Controllers
                 var user = _context.Utilisateurs.Find(model.Id);
                 if (user == null) return NotFound();
 
+                if (_context.Utilisateurs.Any(u => u.NomUtilisateur == model.NomUtilisateur && u.Id != model.Id))
+                {
+                    ModelState.AddModelError("NomUtilisateur", "Ce nom d'utilisateur est déjà utilisé.");
+                    return View(model);
+                }
+
+                if (_context.Utilisateurs.Any(u => u.Email == model.Email && u.Id != model.Id))
+                {
+                    ModelState.AddModelError("Email", "Cet email est déjà utilisé.");
+                    return View(model);
+                }
+
                 // Update username and email
                 user.NomUtilisateur = model.NomUtilisateur;
                 user.Email = model.Email;
+
+                var passwordChanged = false;
 
                 // Handle password change
                 if (!string.IsNullOrEmpty(model.NewPassword))
@@ -427,6 +468,7 @@ namespace Administration.Controllers
 
                     // Hash and save new password
                     user.MotPasse = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+                    passwordChanged = true;
                 }
 
                 // Handle profile image upload
@@ -463,7 +505,13 @@ namespace Administration.Controllers
                 }
 
                 _context.SaveChanges();
-                TempData["Success"] = "Profil mis à jour avec succès.";
+
+                HttpContext.Session.SetString("Username", user.NomUtilisateur);
+                HttpContext.Session.SetString("UserProfileImage", user.PhotoUrl ?? "");
+
+                TempData["Success"] = passwordChanged
+                    ? "Mot de passe modifié avec succès."
+                    : "Profil mis à jour avec succès.";
                 return RedirectToAction("Profile");
             }
             return View(model);

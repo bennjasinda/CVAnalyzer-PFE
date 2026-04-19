@@ -297,7 +297,7 @@
                                         <option value="">-- Sélectionner un département --</option>
                                         @foreach (var dept in departements)
                                         {
-                                            <option value="@dept" selected='@(Model.Departement == dept ? "selected" : null)'>@dept</option>
+                                            <option value="@dept">@dept</option>
                                         }
                                     </select>
                                     <span asp-validation-for="Departement" class="validation-error"></span>

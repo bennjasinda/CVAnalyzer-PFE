@@ -353,7 +353,7 @@
                         </button>
                     </div>
                     <span asp-validation-for="MotPasse" class="validation-message"></span>
-                    <div class="form-hint">Le mot de passe doit contenir au moins 6 caractères.</div>
+                    <div class="form-hint">Au moins 8 caractères, avec des lettres (A-Z, a-z) et des chiffres (0-9).</div>
                 </div>
 
                 <!-- Confirmer Mot de passe -->
@@ -386,16 +386,15 @@
                     <span asp-validation-for="Role" class="validation-message"></span>
                 </div>
 
-                <!-- Départements (visible uniquement si Directeur) -->
-                <div class="departements-group" id="departementsGroup" style="display:none;">
+                <!-- Département (un seul — visible uniquement si Directeur) -->
+                <div class="departements-group" id="departementsGroup" style="@(Model.Role == "Directeur" ? "" : "display:none;")">
                     <label asp-for="Departements" class="form-label">
-                        Départements gérés <span class="required">*</span>
+                        Département <span class="required">*</span>
                     </label>
-                    
-                    <!-- Department Dropdown -->
+
                     <div class="form-control-wrapper mb-3">
                         <i class="bi bi-building-fill"></i>
-                        <select id="departementSelect" class="form-select">
+                        <select asp-for="Departements" id="departementSingle" class="form-select" disabled="@(Model.Role != "Directeur")">
                             <option value="">-- Sélectionner un département --</option>
                             @foreach (var dept in departements)
                             {
@@ -404,8 +403,7 @@
                             <option value="__NEW__">➕ Créer un nouveau département</option>
                         </select>
                     </div>
-                    
-                    <!-- New Department Input (hidden by default) -->
+
                     <div id="newDepartementInput" class="mb-3" style="display:none;">
                         <div class="form-control-wrapper">
                             <i class="bi bi-plus-circle-fill"></i>
@@ -420,18 +418,9 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- Selected Departments Display -->
-                    <div class="form-control-wrapper">
-                        <i class="bi bi-list-check"></i>
-                        
-                        
-                    </div>
+
                     <span asp-validation-for="Departements" class="validation-message"></span>
-                    <div class="form-hint">Sélectionnez un ou plusieurs départements dans la liste ci-dessus.</div>
-                    
-                    <!-- Selected Departments Tags -->
-                    <div id="selectedDepartementsTags" class="mt-2"></div>
+                    <div class="form-hint">Un seul département peut être assigné au directeur.</div>
                 </div>
 
                 <!-- Actions -->
@@ -453,67 +442,49 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Affiche/masque le champ Départements selon le rôle choisi
         const roleSelect = document.getElementById('roleSelect');
         const departementsGroup = document.getElementById('departementsGroup');
-        const departementSelect = document.getElementById('departementSelect');
+        const departementSingle = document.getElementById('departementSingle');
         const newDepartementInput = document.getElementById('newDepartementInput');
         const newDepartementName = document.getElementById('newDepartementName');
         const saveNewDepartementBtn = document.getElementById('saveNewDepartement');
         const cancelNewDepartementBtn = document.getElementById('cancelNewDepartement');
-        const departementsTextarea = document.getElementById('departementsTextarea');
-        const selectedDepartementsTags = document.getElementById('selectedDepartementsTags');
-        
-        let selectedDepartements = [];
 
         function toggleDepartements() {
             if (roleSelect.value === 'Directeur') {
                 departementsGroup.style.display = 'block';
-                departementsTextarea.setAttribute('required', 'required');
+                departementSingle.disabled = false;
+                departementSingle.setAttribute('required', 'required');
             } else {
                 departementsGroup.style.display = 'none';
-                departementsTextarea.removeAttribute('required');
-                departementsTextarea.value = '';
-                selectedDepartements = [];
-                updateDepartementsDisplay();
+                departementSingle.disabled = true;
+                departementSingle.removeAttribute('required');
+                departementSingle.value = '';
+                newDepartementInput.style.display = 'none';
+                newDepartementName.value = '';
             }
         }
 
         roleSelect.addEventListener('change', toggleDepartements);
 
-        // Handle department selection
-        departementSelect.addEventListener('change', function() {
-            const value = this.value;
-            
-            if (value === '__NEW__') {
-                // Show new department input
+        departementSingle.addEventListener('change', function() {
+            if (this.value === '__NEW__') {
                 newDepartementInput.style.display = 'block';
                 newDepartementName.focus();
-                this.value = '';
-            } else if (value && !selectedDepartements.includes(value)) {
-                // Add to selected departments
-                selectedDepartements.push(value);
-                updateDepartementsDisplay();
                 this.value = '';
             }
         });
 
-        // Cancel new department
         cancelNewDepartementBtn.addEventListener('click', function() {
             newDepartementInput.style.display = 'none';
             newDepartementName.value = '';
         });
 
-        // Save new department via AJAX
         saveNewDepartementBtn.addEventListener('click', async function() {
             const nom = newDepartementName.value.trim();
-            
             if (!nom) {
-                if (typeof showToast === 'function') {
-                    showToast('Veuillez entrer un nom de département.', 'warning');
-                } else {
-                    alert('Veuillez entrer un nom de département.');
-                }
+                if (typeof showToast === 'function') showToast('Veuillez entrer un nom de département.', 'warning');
+                else alert('Veuillez entrer un nom de département.');
                 return;
             }
 
@@ -530,68 +501,29 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    // Add new option to dropdown
                     const option = document.createElement('option');
                     option.value = result.nom;
                     option.textContent = result.nom;
-                    
-                    // Insert before the "Create new" option
-                    const newOption = departementSelect.querySelector('option[value="__NEW__"]');
-                    departementSelect.insertBefore(option, newOption);
-                    
-                    // Add to selected departments
-                    selectedDepartements.push(result.nom);
-                    updateDepartementsDisplay();
-                    
-                    // Reset and hide input
+                    const newOpt = departementSingle.querySelector('option[value="__NEW__"]');
+                    departementSingle.insertBefore(option, newOpt);
+                    departementSingle.value = result.nom;
                     newDepartementInput.style.display = 'none';
                     newDepartementName.value = '';
-                    
-                    if (typeof showToast === 'function') {
-                        showToast('Département créé avec succès.', 'success');
-                    }
+                    if (typeof showToast === 'function') showToast('Département créé avec succès.', 'success');
                 } else {
-                    if (typeof showToast === 'function') {
-                        showToast(result.message, 'error');
-                    } else {
-                        alert(result.message);
-                    }
+                    if (typeof showToast === 'function') showToast(result.message, 'error');
+                    else alert(result.message);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                if (typeof showToast === 'function') {
-                    showToast('Une erreur est survenue lors de la création du département.', 'error');
-                } else {
-                    alert('Une erreur est survenue lors de la création du département.');
-                }
+                if (typeof showToast === 'function') showToast('Une erreur est survenue.', 'error');
+                else alert('Une erreur est survenue.');
             }
         });
 
-        // Update departments display
-        function updateDepartementsDisplay() {
-            // Update textarea
-            departementsTextarea.value = selectedDepartements.join(', ');
-            
-            // Update tags
-            selectedDepartementsTags.innerHTML = selectedDepartements.map((dept, index) => `
-                <span class="badge bg-primary me-2 mb-2" style="font-size: 13px; padding: 8px 12px;">
-                    ${dept}
-                    <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 10px;" onclick="removeDepartement(${index})" aria-label="Remove"></button>
-                </span>
-            `).join('');
-        }
-
-        // Remove department from selection
-        window.removeDepartement = function(index) {
-            selectedDepartements.splice(index, 1);
-            updateDepartementsDisplay();
-        };
-
-        // Password Toggle Function
         window.togglePassword = function(inputId, iconId) {
             const input = document.getElementById(inputId);
             const icon = document.getElementById(iconId);
-            
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.remove('bi-eye');
@@ -603,13 +535,6 @@
             }
         };
 
-        // Au chargement (cas de retour avec erreur de validation)
         toggleDepartements();
-        
-        // Parse existing departments if any (for validation error case)
-        if (departementsTextarea && departementsTextarea.value) {
-            selectedDepartements = departementsTextarea.value.split(',').map(d => d.trim()).filter(d => d);
-            updateDepartementsDisplay();
-        }
     </script>
 }

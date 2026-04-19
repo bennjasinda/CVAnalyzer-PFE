@@ -1,5 +1,6 @@
 using Administration.Data;
 using Administration.Filters;
+using Administration.Helpers;
 using Administration.Models;
 using Administration.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -147,33 +148,21 @@ namespace Administration.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeletePoste(int id)
         {
-            var offre = _context.OffresEmploi
-                .Include(o => o.Cvs)
-                .FirstOrDefault(o => o.Id == id);
-            
-            if (offre != null)
+            try
             {
-                try
+                if (!OffreDeletionHelper.TryDeleteOffre(_context, id, out var err))
                 {
-                    // Delete related CVs first ( cascade delete will handle Matches)
-                    if (offre.Cvs != null && offre.Cvs.Any())
-                    {
-                        _context.Cvs.RemoveRange(offre.Cvs);
-                    }
-                    
-                    _context.OffresEmploi.Remove(offre);
-                    _context.SaveChanges();
-                    TempData["Success"] = "Poste supprimé avec succès.";
+                    TempData["Error"] = err ?? "Impossible de supprimer le poste.";
+                    return RedirectToAction("Postes");
                 }
-                catch (Exception ex)
-                {
-                    TempData["Error"] = "Erreur lors de la suppression du poste.";
-                }
+
+                TempData["Success"] = "Poste supprimé avec succès.";
             }
-            else
+            catch (Exception)
             {
-                TempData["Error"] = "Poste non trouvé.";
+                TempData["Error"] = "Erreur lors de la suppression du poste.";
             }
+
             return RedirectToAction("Postes");
         }
 
@@ -188,16 +177,22 @@ namespace Administration.Controllers
                 return RedirectToAction("Postes");
             }
 
-            var ids = selectedIds.Split(',').Select(int.Parse).ToList();
-            var offres = _context.OffresEmploi.Where(o => ids.Contains(o.Id)).ToList();
-            
-            if (offres.Any())
+            var ids = selectedIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(s => int.Parse(s))
+                .ToList();
+
+            var deleted = 0;
+            foreach (var id in ids)
             {
-                _context.OffresEmploi.RemoveRange(offres);
-                _context.SaveChanges();
-                TempData["Success"] = $"{offres.Count} poste(s) supprimé(s) avec succès.";
+                if (OffreDeletionHelper.TryDeleteOffre(_context, id, out _))
+                    deleted++;
             }
-            
+
+            if (deleted > 0)
+                TempData["Success"] = $"{deleted} poste(s) supprimé(s) avec succès.";
+            else
+                TempData["Error"] = "Aucun poste n'a pu être supprimé.";
+
             return RedirectToAction("Postes");
         }
 
@@ -263,8 +258,22 @@ namespace Administration.Controllers
                 var user = _context.Utilisateurs.Find(model.Id);
                 if (user == null) return NotFound();
 
-                // Update email
+                if (_context.Utilisateurs.Any(u => u.NomUtilisateur == model.NomUtilisateur && u.Id != model.Id))
+                {
+                    ModelState.AddModelError("NomUtilisateur", "Ce nom d'utilisateur est déjà utilisé.");
+                    return View(model);
+                }
+
+                if (_context.Utilisateurs.Any(u => u.Email == model.Email && u.Id != model.Id))
+                {
+                    ModelState.AddModelError("Email", "Cet email est déjà utilisé.");
+                    return View(model);
+                }
+
+                user.NomUtilisateur = model.NomUtilisateur;
                 user.Email = model.Email;
+
+                var passwordChanged = false;
 
                 // Handle password change
                 if (!string.IsNullOrEmpty(model.NewPassword))
@@ -285,6 +294,7 @@ namespace Administration.Controllers
 
                     // Hash and save new password
                     user.MotPasse = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+                    passwordChanged = true;
                 }
 
                 // Handle profile image upload
@@ -321,7 +331,13 @@ namespace Administration.Controllers
                 }
 
                 _context.SaveChanges();
-                TempData["Success"] = "Profil mis à jour avec succès.";
+
+                HttpContext.Session.SetString("Username", user.NomUtilisateur);
+                HttpContext.Session.SetString("UserProfileImage", user.PhotoUrl ?? "");
+
+                TempData["Success"] = passwordChanged
+                    ? "Mot de passe modifié avec succès."
+                    : "Profil mis à jour avec succès.";
                 return RedirectToAction("Profile");
             }
             return View(model);

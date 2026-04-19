@@ -53,5 +53,15 @@
     "C:\\Users\\bennj\\.nuget\\packages\\system.security.cryptography.pkcs\\9.0.4\\system.security.cryptography.pkcs.9.0.4.nupkg.sha512",
     "C:\\Users\\bennj\\.nuget\\packages\\system.security.cryptography.protecteddata\\9.0.4\\system.security.cryptography.protecteddata.9.0.4.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "message": "Une erreur s’est produite lors de l’obtention des données de vulnérabilité du package\u00A0: Le téléchargement de 'https://api.nuget.org/v3-vulnerabilities/2026.04.17.14.48.02/vulnerability.base.json' a expiré, car aucune donnée n'a été reçue pendant 60000\u00A0ms.",
+      "projectPath": "C:\\Users\\bennj\\Desktop\\CvParsing\\Administration\\Administration.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\bennj\\Desktop\\CvParsing\\Administration\\Administration.csproj",
+      "targetGraphs": []
+    }
+  ]
 }

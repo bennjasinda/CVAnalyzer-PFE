@@ -6,6 +6,7 @@
     var roleFilter = ViewBag.RoleFilter as string ?? "";
     var departementFilter = ViewBag.DepartementFilter as string ?? "";
     var departementsList = ViewBag.DepartementsList as List<string> ?? new List<string>();
+    var candidatPublicBaseUrl = ViewBag.CandidatPublicBaseUrl as string ?? "";
     
     // Filter users based on search
     var filteredUsers = Model;
@@ -40,15 +41,8 @@
     var directeurs = filteredUsers.Where(u => u.Role == "Directeur").ToList();
     var candidats = filteredUsers.Where(u => u.Role == "Candidat").ToList();
     
-    // Helper function to get profile image URL
-    string GetProfileImageUrl(Administration.Models.Utilisateur user)
-    {
-        if (!string.IsNullOrEmpty(user.PhotoUrl))
-        {
-            return user.PhotoUrl;
-        }
-        return null;
-    }
+    string? GetProfileImageUrl(Administration.Models.Utilisateur user) =>
+        ProfileImageUrlHelper.ResolveDisplayUrl(user.PhotoUrl, user.Role, candidatPublicBaseUrl);
 }
 
 <style>
@@ -701,22 +695,13 @@
                                 <tr class="user-row" data-name="@u.NomUtilisateur.ToLower()" data-email="@u.Email.ToLower()" data-role="candidat" data-departements="@(u.Departements?.ToLower() ?? "")">
                                     <td>
                                         <div class="user-info">
-                                            <div class="user-avatar">
-                                                @if (!string.IsNullOrEmpty(photoUrl))
-                                                {
-                                                    <img src="@photoUrl" alt="@u.NomUtilisateur" />
-                                                }
-                                                else
-                                                {
-                                                    @u.NomUtilisateur.Substring(0,1).ToUpper()
-                                                }
-                                            </div>
                                             <div>
                                                 <div class="user-name">@u.NomUtilisateur</div>
                                                 <span class="role-badge candidat">@u.Role</span>
                                             </div>
                                         </div>
                                     </td>
+                                    
                                     <td class="user-email">@u.Email</td>
                                     <td>
                                         @if (u.IsActive)
@@ -796,15 +781,6 @@
         if (departementFilter) {
             departementFilter.addEventListener('change', performSearch);
         }
-
-        // Reset filters
-        resetFiltersBtn.addEventListener('click', function() {
-            searchInput.value = '';
-            roleFilter.value = '';
-            if (departementFilter) departementFilter.value = '';
-            departementFilterContainer.style.display = 'none';
-            performSearch();
-        });
 
         // Search function
         function performSearch() {
