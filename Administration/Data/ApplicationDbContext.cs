@@ -16,6 +16,9 @@ namespace Administration.Data
         public DbSet<CvCompetence> CvCompetences { get; set; }
         public DbSet<DonneesCv> DonneesCvs { get; set; }
         public DbSet<Departement> Departements { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<CvExperience> CvExperiences { get; set; }
+        public DbSet<CvDiplome> CvDiplomes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,6 +30,7 @@ namespace Administration.Data
             modelBuilder.Entity<Cv>().ToTable("Cv");
             modelBuilder.Entity<Match>().ToTable("Match");
             modelBuilder.Entity<Departement>().ToTable("Departement");
+            modelBuilder.Entity<Notification>().ToTable("Notification");
 
             // MANY TO MANY
             modelBuilder.Entity<CvCompetence>()
@@ -57,6 +61,20 @@ namespace Administration.Data
                 .WithMany()
                 .HasForeignKey(m => m.OffreId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Cv -> CvExperience
+            modelBuilder.Entity<CvExperience>()
+                .HasOne(ce => ce.Cv)
+                .WithMany(c => c.CvExperiences)
+                .HasForeignKey(ce => ce.CvId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Cv -> CvDiplome
+            modelBuilder.Entity<CvDiplome>()
+                .HasOne(cd => cd.Cv)
+                .WithMany(c => c.CvDiplomes)
+                .HasForeignKey(cd => cd.CvId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // SEED
             modelBuilder.Entity<Utilisateur>().HasData(new Utilisateur

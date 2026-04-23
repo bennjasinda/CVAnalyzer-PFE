@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using CvParsing.Data;
 using CvParsing.Services;
 using CvParsing.Models;
+using CvParsing.Helpers;
 
 namespace CvParsing.Controllers;
 
@@ -69,6 +70,13 @@ public class AccountController : Controller
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
         {
             ViewBag.Error = "Veuillez remplir tous les champs.";
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
+        }
+
+        if (!PasswordRules.TryValidate(password, out var pwdErr))
+        {
+            ViewBag.Error = pwdErr ?? "Mot de passe invalide.";
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }

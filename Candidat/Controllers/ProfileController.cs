@@ -56,6 +56,18 @@ public class ProfileController : Controller
             .Include(c => c.Matches)
             .Where(c => c.UtilisateurId == userId);
 
+        // Apply status filter
+        if (!string.IsNullOrEmpty(statusNorm))
+        {
+            var dbStatus = statusNorm switch
+            {
+                "Accepted" => "Accepte",
+                "Rejected" => "Refuse",
+                _ => "En attente"
+            };
+            appsQuery = appsQuery.Where(c => c.Statut == dbStatus);
+        }
+
         var totalApps = await appsQuery.CountAsync();
         var cvs = await appsQuery
             .OrderByDescending(c => c.UploadDate)
@@ -65,6 +77,12 @@ public class ProfileController : Controller
 
         var applications = cvs.Select(c => {
             var match = c.Matches.FirstOrDefault(m => m.OffreId == c.OffreId);
+            var status = c.Statut switch
+            {
+                "Accepte" => "Accepted",
+                "Refuse" => "Rejected",
+                _ => "Pending"
+            };
             return new ApplicationRowViewModel
             {
                 CvId = c.Id,
@@ -72,7 +90,7 @@ public class ProfileController : Controller
                 TitrePoste = c.Offre?.Titre ?? "—",
                 DepartementOuEntreprise = c.Offre?.Departement ?? "—",
                 DateCandidature = c.UploadDate,
-                Statut = "Pending",
+                Statut = status,
                 GlobalScore = match?.GlobalScore ?? 0,
                 CompetenceScore = match?.CompetenceScore ?? 0,
                 DiplomeScore = match?.DiplomeScore ?? 0,
@@ -85,8 +103,10 @@ public class ProfileController : Controller
             NomComplet = utilisateur.NomUtilisateur ?? "",
             Email = utilisateur.Email ?? "",
             PhotoUrl = utilisateur.PhotoUrl,
-            DepartementOptions = deptOptions,
-            DesignationOptions = DefaultDesignations,
+       
+            
+            
+           
             Applications = applications,
             ApplicationsTotal = totalApps,
             ApplicationsPage = page,
@@ -116,6 +136,18 @@ public class ProfileController : Controller
             .Include(c => c.Offre)
             .Include(c => c.Matches)
             .Where(c => c.UtilisateurId == userId);
+
+        // Apply status filter
+        if (!string.IsNullOrEmpty(statusNorm))
+        {
+            var dbStatus = statusNorm switch
+            {
+                "Accepted" => "Accepte",
+                "Rejected" => "Refuse",
+                _ => "En attente"
+            };
+            appsQuery = appsQuery.Where(c => c.Statut == dbStatus);
+        }
 
         var totalApps = await appsQuery.CountAsync();
         var cvs = await appsQuery
@@ -159,11 +191,7 @@ public class ProfileController : Controller
     public async Task<IActionResult> UpdateProfile(
         string nomComplet,
         string email,
-        string? telephone,
-        string? departement,
-        string? designation,
-        string? langues,
-        string? bio,
+       
         IFormFile? photo)
     {
         var userIdStr = HttpContext.Session.GetString("UserId");
@@ -189,6 +217,7 @@ public class ProfileController : Controller
 
         utilisateur.NomUtilisateur = nomComplet.Trim();
         utilisateur.Email = email.Trim();
+       
         HttpContext.Session.SetString("UserName", utilisateur.NomUtilisateur);
         HttpContext.Session.SetString("UserEmail", utilisateur.Email);
 

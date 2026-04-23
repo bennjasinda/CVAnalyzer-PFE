@@ -850,7 +850,7 @@
                         <th style="width: 25%;">Candidat</th>
                         <th>Email</th>
                         <th style="width: 100px;">Score</th>
-                        <th>Date inscription</th>
+                        <th style="width: 120px;">Statut</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -862,12 +862,13 @@
                         var color = avatarColors[colorIndex];
                         var initial = candidat.NomUtilisateur?.Length > 0 ? candidat.NomUtilisateur[0].ToString().ToUpper() : "?";
                         
-                        var isActive = candidat.IsActive;
-                        var statusClass = isActive ? "status-active" : "status-inactive";
-                        
                         var score = scoreByUserId.TryGetValue(candidat.Id, out var s) ? s : 0;
                         var scoreClass = score >= 80 ? "high" : (score >= 70 ? "medium" : "low");
                         var cvId = cvByUserId.TryGetValue(candidat.Id, out var userCvId) ? userCvId : 0;
+                        var statusByUserId = ViewBag.StatusByUserId as Dictionary<int, string> ?? new Dictionary<int, string>();
+                        var statut = statusByUserId.TryGetValue(candidat.Id, out var st) ? st : "En attente";
+                        var statusClass = statut == "Accepte" ? "status-active" : (statut == "Refuse" ? "status-inactive" : "");
+                        var statusLabel = statut == "Accepte" ? "Accepté" : (statut == "Refuse" ? "Refusé" : "En attente");
 
                         <tr>
                             <td>
@@ -875,7 +876,6 @@
                                     <div class="candidate-avatar" style="background: @color;">@initial</div>
                                     <div>
                                         <div class="candidate-name">@candidat.NomUtilisateur</div>
-                                        
                                     </div>
                                 </div>
                             </td>
@@ -885,8 +885,11 @@
                                     <i class="bi bi-star-fill" style="font-size: 10px;"></i> @score%
                                 </span>
                             </td>
-                            <td>@candidat.DateCreation.ToString("dd MMM yyyy")</td>
-                            
+                            <td>
+                                <span class="status-pill @(statut == "Accepte" ? "status-active" : (statut == "Refuse" ? "status-inactive" : ""))">
+                                    @statusLabel
+                                </span>
+                            </td>
                             <td>
                                 <div class="candidate-actions">
                                     @if (cvId > 0)
@@ -904,7 +907,27 @@
                                     <a href="mailto:@candidat.Email" class="cand-btn btn-download" title="Contacter">
                                         <i class="bi bi-envelope"></i>
                                     </a>
-                                    
+                                    @if (cvId > 0 && statut == "En attente")
+                                    {
+                                        <form asp-action="AccepterCandidature" method="post" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="cvId" value="@cvId" />
+                                            <input type="hidden" name="offreId" value="@Model.Offre.Id" />
+                                            <button type="submit" class="cand-btn btn-accept" title="Accepter"
+                                                    onclick="return confirm('Accepter cette candidature ?')">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="RefuserCandidature" method="post" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="cvId" value="@cvId" />
+                                            <input type="hidden" name="offreId" value="@Model.Offre.Id" />
+                                            <button type="submit" class="cand-btn btn-delete" title="Refuser"
+                                                    onclick="return confirm('Refuser cette candidature ?')">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
                                     @if (User.IsInRole("Admin"))
                                     {
                                         <form asp-action="SupprimerCandidat" asp-route-id="@candidat.Id" method="post" 
@@ -924,21 +947,15 @@
 
             <div class="candidates-footer">
                 <div class="candidates-footer-info">
-                    Affichage de <strong>1 à @Model.Candidats.Count()</strong> sur <strong>@Model.Candidats.Count()</strong> candidats
+                    @{
+                        var paginationRH = ViewBag.Pagination as Administration.ViewModels.PaginationViewModel;
+                        var totalCvsRH = ViewBag.TotalCvs ?? 0;
+                        var startItemRH = Model.Candidats.Any() ? ((paginationRH?.CurrentPage ?? 1) - 1) * (paginationRH?.PageSize ?? 8) + 1 : 0;
+                        var endItemRH = startItemRH + Model.Candidats.Count() - 1;
+                    }
+                    Affichage de <strong>@startItemRH à @endItemRH</strong> sur <strong>@totalCvsRH</strong> candidats
                 </div>
-                <nav>
-                    <ul class="pagination mb-0" style="gap: 4px;">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Previous</a>
-                        </li>z
-                        <li class="page-item active">
-                            <a class="page-link" href="#" style="background: #6366f1; border-color: #6366f1; border-radius: 6px; color: white;">1</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Next</a>
-                        </li>
-                    </ul>
-                </nav>
+                @await Html.PartialAsync("_Pagination", paginationRH)
             </div>
         }
         else
@@ -1046,21 +1063,15 @@
 
             <div class="candidates-footer">
                 <div class="candidates-footer-info">
-                    Affichage de <strong>1 à @Model.Candidats.Count()</strong> sur <strong>@Model.Candidats.Count()</strong> candidats
+                    @{
+                        var paginationRH2 = ViewBag.Pagination as Administration.ViewModels.PaginationViewModel;
+                        var totalCvsRH2 = ViewBag.TotalCvs ?? 0;
+                        var startItemRH2 = Model.Candidats.Any() ? ((paginationRH2?.CurrentPage ?? 1) - 1) * (paginationRH2?.PageSize ?? 8) + 1 : 0;
+                        var endItemRH2 = startItemRH2 + Model.Candidats.Count() - 1;
+                    }
+                    Affichage de <strong>@startItemRH2 à @endItemRH2</strong> sur <strong>@totalCvsRH2</strong> candidats
                 </div>
-                <nav>
-                    <ul class="pagination mb-0" style="gap: 4px;">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Previous</a>
-                        </li>z
-                        <li class="page-item active">
-                            <a class="page-link" href="#" style="background: #6366f1; border-color: #6366f1; border-radius: 6px; color: white;">1</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Next</a>
-                        </li>
-                    </ul>
-                </nav>
+                @await Html.PartialAsync("_Pagination", paginationRH2)
             </div>
         }
         else

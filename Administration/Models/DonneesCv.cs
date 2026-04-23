@@ -8,6 +8,12 @@ namespace Administration.Models
         public string? NomCandidat { get; set; }
         public string? Email { get; set; }
         public string? Telephone { get; set; }
+        
+        // CV Content Fields
+        public string? Competences { get; set; }
+        public string? Experience { get; set; }
+        public string? NiveauEducation { get; set; }
+        public string? AutresInfos { get; set; }
 
         public virtual Cv Cv { get; set; } = null!;
     }

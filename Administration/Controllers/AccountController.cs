@@ -1,4 +1,5 @@
 using Administration.Data;
+using Administration.Helpers;
 using Administration.Models;
 using Administration.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,13 @@ namespace Administration.Controllers
         {
             if (!ModelState.IsValid)
                 return View(model);
+
+            // Validate password strength
+            if (!PasswordRules.TryValidate(model.MotPasse, out var pwdErr))
+            {
+                ModelState.AddModelError(nameof(model.MotPasse), pwdErr ?? "Mot de passe invalide.");
+                return View(model);
+            }
 
             if (_context.Utilisateurs.Any(u => u.NomUtilisateur == model.NomUtilisateur))
             {

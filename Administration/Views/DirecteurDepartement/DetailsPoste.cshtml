@@ -726,7 +726,7 @@
                 <i class="bi bi-check-circle"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value" id="acceptedCount">0</div>
+                <div class="stat-value">@(ViewBag.TotalAcceptes ?? 0)</div>
                 <div class="stat-label">Candidatures acceptées</div>
             </div>
         </div>
@@ -735,7 +735,7 @@
                 <i class="bi bi-x-circle"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value" id="rejectedCount">0</div>
+                <div class="stat-value">@(ViewBag.TotalRefuses ?? 0)</div>
                 <div class="stat-label">Candidatures refusées</div>
             </div>
         </div>
@@ -845,7 +845,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var cv in Model.Cvs)
+                    @foreach (var cv in ViewBag.PagedCvs as List<Administration.Models.Cv> ?? new List<Administration.Models.Cv>())
                     {
                         var match = cv.Matches.FirstOrDefault();
                         var score = match?.GlobalScore ?? 0;
@@ -857,6 +857,9 @@
                         var initial = cv.DonneesCv?.NomCandidat?.Length > 0 ? cv.DonneesCv.NomCandidat[0].ToString().ToUpper() : "?";
                         var candidateName = cv.DonneesCv?.NomCandidat ?? "Candidat sans nom";
                         var candidateEmail = cv.DonneesCv?.Email ?? "—";
+                        var statusClass = cv.Statut == "Accepte" ? "status-accepted" : (cv.Statut == "Refuse" ? "status-rejected" : "status-pending");
+                        var statusIcon = cv.Statut == "Accepte" ? "bi-check-circle" : (cv.Statut == "Refuse" ? "bi-x-circle" : "bi-hourglass");
+                        var statusText = cv.Statut == "Accepte" ? "Accepté" : (cv.Statut == "Refuse" ? "Refusé" : "En attente");
                         
                         <tr data-cv-id="@cv.Id">
                             <td>
@@ -874,8 +877,8 @@
                                 </span>
                             </td>
                             <td>
-                                <span class="status-badge-candidate status-pending" id="status-@cv.Id">
-                                    <i class="bi bi-hourglass"></i> En attente
+                                <span class="status-badge-candidate @statusClass">
+                                    <i class="bi @statusIcon"></i> @statusText
                                 </span>
                             </td>
                             <td>
@@ -884,14 +887,27 @@
                                        class="cand-btn btn-view" title="Voir l'analyse">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <button type="button" class="cand-btn btn-accept" title="Accepter la candidature"
-                                            onclick="updateCandidateStatus(@cv.Id, 'accepted')">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                    <button type="button" class="cand-btn btn-reject" title="Refuser la candidature"
-                                            onclick="updateCandidateStatus(@cv.Id, 'rejected')">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
+                                    @if (cv.Statut == "En attente")
+                                    {
+                                        <form asp-action="AccepterCandidature" method="post" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="cvId" value="@cv.Id" />
+                                            <input type="hidden" name="offreId" value="@Model.Id" />
+                                            <button type="submit" class="cand-btn btn-accept" title="Accepter la candidature"
+                                                    onclick="return confirm('Accepter cette candidature ?')">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="RefuserCandidature" method="post" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="cvId" value="@cv.Id" />
+                                            <input type="hidden" name="offreId" value="@Model.Id" />
+                                            <button type="submit" class="cand-btn btn-reject" title="Refuser la candidature"
+                                                    onclick="return confirm('Refuser cette candidature ?')">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -901,21 +917,16 @@
 
             <div class="candidates-footer">
                 <div class="candidates-footer-info">
-                    Affichage de <strong>1 à @(Model.Cvs?.Count() ?? 0)</strong> sur <strong>@(Model.Cvs?.Count() ?? 0)</strong> candidats
+                    @{
+                        var pagedCvsDD = ViewBag.PagedCvs as List<Administration.Models.Cv> ?? new List<Administration.Models.Cv>();
+                        var paginationDD = ViewBag.Pagination as Administration.ViewModels.PaginationViewModel;
+                        var startItem = pagedCvsDD.Any() ? ((paginationDD?.CurrentPage ?? 1) - 1) * (paginationDD?.PageSize ?? 8) + 1 : 0;
+                        var endItem = startItem + pagedCvsDD.Count - 1;
+                        var totalItems = paginationDD?.TotalItems ?? 0;
+                    }
+                    Affichage de <strong>@startItem à @endItem</strong> sur <strong>@totalItems</strong> candidats
                 </div>
-                <nav>
-                    <ul class="pagination mb-0" style="gap: 4px;">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Précédent</a>
-                        </li>
-                        <li class="page-item active">
-                            <a class="page-link" href="#" style="background: #f59e0b; border-color: #f59e0b; border-radius: 6px; color: white;">1</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Suivant</a>
-                        </li>
-                    </ul>
-                </nav>
+                @await Html.PartialAsync("_Pagination", ViewBag.Pagination as Administration.ViewModels.PaginationViewModel)
             </div>
         }
         else
@@ -931,65 +942,6 @@
 
 @section Scripts {
     <script>
-        // Store candidate statuses in localStorage
-        const storageKey = 'candidate_statuses_@Model.Id';
-        let candidateStatuses = JSON.parse(localStorage.getItem(storageKey) || '{}');
-
-        // Initialize statuses on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            updateAllStatuses();
-            updateStats();
-        });
-
-        function updateCandidateStatus(cvId, status) {
-            candidateStatuses[cvId] = status;
-            localStorage.setItem(storageKey, JSON.stringify(candidateStatuses));
-            
-            const statusElement = document.getElementById('status-' + cvId);
-            if (statusElement) {
-                statusElement.className = 'status-badge-candidate status-' + status;
-                if (status === 'accepted') {
-                    statusElement.innerHTML = '<i class="bi bi-check-circle"></i> Accepté';
-                } else if (status === 'rejected') {
-                    statusElement.innerHTML = '<i class="bi bi-x-circle"></i> Refusé';
-                } else {
-                    statusElement.innerHTML = '<i class="bi bi-hourglass"></i> En attente';
-                }
-            }
-            
-            updateStats();
-        }
-
-        function updateAllStatuses() {
-            for (const [cvId, status] of Object.entries(candidateStatuses)) {
-                const statusElement = document.getElementById('status-' + cvId);
-                if (statusElement) {
-                    statusElement.className = 'status-badge-candidate status-' + status;
-                    if (status === 'accepted') {
-                        statusElement.innerHTML = '<i class="bi bi-check-circle"></i> Accepté';
-                    } else if (status === 'rejected') {
-                        statusElement.innerHTML = '<i class="bi bi-x-circle"></i> Refusé';
-                    }
-                }
-            }
-        }
-
-        function updateStats() {
-            let accepted = 0;
-            let rejected = 0;
-            
-            for (const status of Object.values(candidateStatuses)) {
-                if (status === 'accepted') accepted++;
-                if (status === 'rejected') rejected++;
-            }
-            
-            const acceptedElement = document.getElementById('acceptedCount');
-            const rejectedElement = document.getElementById('rejectedCount');
-            
-            if (acceptedElement) acceptedElement.textContent = accepted;
-            if (rejectedElement) rejectedElement.textContent = rejected;
-        }
-
         function searchCandidates() {
             const input = document.getElementById('candidateSearch');
             const filter = input.value.toLowerCase();

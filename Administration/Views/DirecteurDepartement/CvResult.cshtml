@@ -252,6 +252,131 @@
 
     .back-btn:hover {
         background: #e2e8f0;
+        transform: translateX(-2px);
+    }
+
+    /* View CV Button */
+    .view-cv-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 24px;
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        color: white;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .view-cv-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+        color: white;
+    }
+
+    .view-cv-btn i {
+        font-size: 16px;
+    }
+
+    /* CV Details Section */
+    .cv-details-section {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 24px;
+    }
+
+    .cv-details-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cv-details-title i {
+        color: #f59e0b;
+    }
+
+    .cv-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    .cv-detail-card {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 16px;
+        border-left: 3px solid #f59e0b;
+    }
+
+    .cv-detail-card.experience { border-left-color: #10b981; }
+    .cv-detail-card.education { border-left-color: #f59e0b; }
+    .cv-detail-card.skills { border-left-color: #6366f1; }
+    .cv-detail-card.other { border-left-color: #8b5cf6; }
+
+    .cv-detail-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .cv-detail-card-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+
+    .cv-detail-card.experience .cv-detail-card-icon { background: #ecfdf5; color: #10b981; }
+    .cv-detail-card.education .cv-detail-card-icon { background: #fffbeb; color: #f59e0b; }
+    .cv-detail-card.skills .cv-detail-card-icon { background: #eef2ff; color: #6366f1; }
+    .cv-detail-card.other .cv-detail-card-icon { background: #f5f3ff; color: #8b5cf6; }
+
+    .cv-detail-card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .cv-detail-content {
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .skills-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .skill-tag {
+        background: white;
+        color: #6366f1;
+        padding: 4px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #e0e7ff;
+    }
+    }
+
+    .back-btn:hover {
+        background: #e2e8f0;
         color: #1e293b;
     }
 
@@ -313,6 +438,126 @@
                 <div class="meta-item">
                     <i class="bi bi-check-circle"></i>
                     Match ID: @Model.Id
+                </div>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.Cv?.CheminFichier))
+        {
+            <div style="margin-left: auto;">
+                <a href="@Model.Cv.CheminFichier" target="_blank" class="view-cv-btn">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    Voir le CV
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- CV Details Section -->
+    <div class="cv-details-section">
+        <h3 class="cv-details-title">
+            <i class="bi bi-file-earmark-text"></i>
+            D&eacute;tails du CV
+        </h3>
+        <div class="cv-detail-grid">
+            <!-- Expérience -->
+            <div class="cv-detail-card experience">
+                <div class="cv-detail-card-header">
+                    <div class="cv-detail-card-icon">
+                        <i class="bi bi-briefcase"></i>
+                    </div>
+                    <h4 class="cv-detail-card-title">Exp&eacute;rience</h4>
+                </div>
+                <div class="cv-detail-content">
+                    @{
+                        var experience = Model.Cv?.DonneesCv?.Experience;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(experience))
+                    {
+                        <p>@experience</p>
+                    }
+                    else
+                    {
+                        <p style="color: #94a3b8;">Aucune exp&eacute;rience indiqu&eacute;e</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Formation -->
+            <div class="cv-detail-card education">
+                <div class="cv-detail-card-header">
+                    <div class="cv-detail-card-icon">
+                        <i class="bi bi-mortarboard"></i>
+                    </div>
+                    <h4 class="cv-detail-card-title">Formation / Dipl&ocirc;me</h4>
+                </div>
+                <div class="cv-detail-content">
+                    @{
+                        var education = Model.Cv?.DonneesCv?.NiveauEducation;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(education))
+                    {
+                        <p><strong>Niveau :</strong> @education</p>
+                    }
+                    else
+                    {
+                        <p style="color: #94a3b8;">Aucun dipl&ocirc;me indiqu&eacute;</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Compétences -->
+            <div class="cv-detail-card skills">
+                <div class="cv-detail-card-header">
+                    <div class="cv-detail-card-icon">
+                        <i class="bi bi-code-slash"></i>
+                    </div>
+                    <h4 class="cv-detail-card-title">Comp&eacute;tences</h4>
+                </div>
+                <div class="cv-detail-content">
+                    @{
+                        var competences = Model.Cv?.DonneesCv?.Competences;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(competences))
+                    {
+                        <div class="skills-list">
+                            @foreach (var skill in competences.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                            {
+                                <span class="skill-tag">@skill.Trim()</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p style="color: #94a3b8;">Aucune comp&eacute;tence indiqu&eacute;e</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Informations complémentaires -->
+            <div class="cv-detail-card other">
+                <div class="cv-detail-card-header">
+                    <div class="cv-detail-card-icon">
+                        <i class="bi bi-info-circle"></i>
+                    </div>
+                    <h4 class="cv-detail-card-title">Infos compl&eacute;mentaires</h4>
+                </div>
+                <div class="cv-detail-content">
+                    @{
+                        var autresInfos = Model.Cv?.DonneesCv?.AutresInfos;
+                        var telephone = Model.Cv?.DonneesCv?.Telephone;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(telephone) && telephone != "—")
+                    {
+                        <p><strong>T&eacute;l :</strong> @telephone</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(autresInfos))
+                    {
+                        <p><strong>Autres :</strong> @autresInfos</p>
+                    }
+                    @if ((string.IsNullOrWhiteSpace(autresInfos) || string.IsNullOrWhiteSpace(telephone) || telephone == "—"))
+                    {
+                        <p style="color: #94a3b8;">Aucune information compl&eacute;mentaire</p>
+                    }
                 </div>
             </div>
         </div>

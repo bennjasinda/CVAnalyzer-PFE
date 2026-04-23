@@ -14,6 +14,7 @@ namespace Administration.Models
 
         public string CheminFichier { get; set; } = string.Empty;
         public DateTime UploadDate { get; set; } = DateTime.Now;
+        public string Statut { get; set; } = "En attente";
 
         public virtual OffreEmploi Offre { get; set; } = null!;
         public virtual Utilisateur Utilisateur { get; set; } = null!;
@@ -25,5 +26,11 @@ namespace Administration.Models
 
         public virtual ICollection<CvCompetence> CvCompetences { get; set; }
             = new List<CvCompetence>();
+
+        public virtual ICollection<CvExperience> CvExperiences { get; set; }
+            = new List<CvExperience>();
+
+        public virtual ICollection<CvDiplome> CvDiplomes { get; set; }
+            = new List<CvDiplome>();
     }
 }

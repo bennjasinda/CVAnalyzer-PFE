@@ -440,15 +440,31 @@
 
             <div class="pagination-container">
                 <div class="pagination-info">
-                    Affichage de 1 à @Model.Count sur @Model.Count entrées
+                    @if (ViewBag.Pagination != null)
+                    {
+                        var startItem = (ViewBag.Pagination.CurrentPage - 1) * ViewBag.Pagination.PageSize + 1;
+                        var endItem = Math.Min(ViewBag.Pagination.CurrentPage * ViewBag.Pagination.PageSize, ViewBag.Pagination.TotalItems);
+                        <text>Affichage de @startItem à @endItem sur @ViewBag.Pagination.TotalItems entrées</text>
+                    }
+                    else
+                    {
+                        <text>Affichage de 1 à @Model.Count sur @Model.Count entrées</text>
+                    }
                 </div>
-                <div class="pagination-custom">
-                    <button class="page-btn"><i class="bi bi-chevron-left"></i></button>
-                    <button class="page-btn active">1</button>
-                    <button class="page-btn">2</button>
-                    <button class="page-btn">3</button>
-                    <button class="page-btn"><i class="bi bi-chevron-right"></i></button>
-                </div>
+                @if (ViewBag.Pagination != null)
+                {
+                    <partial name="_Pagination" model="ViewBag.Pagination" />
+                }
+                else
+                {
+                    <div class="pagination-custom">
+                        <button class="page-btn"><i class="bi bi-chevron-left"></i></button>
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">2</button>
+                        <button class="page-btn">3</button>
+                        <button class="page-btn"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                }
             </div>
         }
     </div>

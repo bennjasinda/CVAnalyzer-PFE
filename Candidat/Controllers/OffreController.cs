@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using CvParsing.Services;
 
 namespace CvParsing.Controllers;
 
@@ -225,7 +226,23 @@ public class OffreController : Controller
         _context.DonneesCvs.Add(newDonneesCv);
         await _context.SaveChangesAsync();
 
-        var detailedScores = CalculateScores(newDonneesCv, offre);
+        // Extract structured experiences and diplomas
+        var experiences = CvDataExtractionService.ExtractExperiences(newCv.Id, experience);
+        var diplomes = CvDataExtractionService.ExtractDiplomes(newCv.Id, niveauEducation, autresInfos);
+
+        // Save experiences and diplomas
+        if (experiences.Count > 0)
+        {
+            _context.CvExperiences.AddRange(experiences);
+        }
+        if (diplomes.Count > 0)
+        {
+            _context.CvDiplomes.AddRange(diplomes);
+        }
+        await _context.SaveChangesAsync();
+
+        // Calculate enhanced scores with bonus system
+        var enhancedScores = EnhancedScoringEngine.CalculateEnhancedScores(newDonneesCv, offre, experiences, diplomes);
         var match = await _context.Matches.FirstOrDefaultAsync(m => m.CvId == newCv.Id && m.OffreId == offreId);
         if (match == null)
         {
@@ -237,10 +254,53 @@ public class OffreController : Controller
             _context.Matches.Add(match);
         }
 
-        match.DiplomeScore = detailedScores.diploma;
-        match.ExperienceScore = detailedScores.experience;
-        match.CompetenceScore = detailedScores.skills;
-        match.GlobalScore = detailedScores.global;
+        match.DiplomeScore = enhancedScores.diploma;
+        match.ExperienceScore = enhancedScores.experience;
+        match.CompetenceScore = enhancedScores.skills;
+        match.BonusScore = enhancedScores.bonus;
+        match.SkillsBonusScore = enhancedScores.skillsBonus;
+        match.EducationBonusScore = enhancedScores.educationBonus;
+        match.GlobalScore = enhancedScores.global;
+        await _context.SaveChangesAsync();
+
+        // Notifications: nouveau CV reçu
+        var rhs = _context.Utilisateurs.Where(u => u.Role == "RH").ToList();
+        foreach (var rh in rhs)
+        {
+            _context.Notifications.Add(new Notification
+            {
+                UtilisateurId = rh.Id,
+                Titre = "Nouveau CV reçu",
+                Message = $"Un nouveau CV a été déposé pour le poste '{offre?.Titre}'.",
+                Type = "Info",
+                RelatedCvId = newCv.Id,
+                RelatedOffreId = offreId
+            });
+        }
+
+        // Notification aux directeurs du département
+        var directeurs = _context.Utilisateurs
+            .Where(u => u.Role == "Directeur" && u.Departements != null)
+            .ToList();
+        foreach (var directeur in directeurs)
+        {
+            var dirs = directeur.Departements?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(d => d.Trim())
+                .ToList() ?? new List<string>();
+            if (dirs.Contains(offre?.Departement ?? ""))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UtilisateurId = directeur.Id,
+                    Titre = "Nouveau CV dans votre département",
+                    Message = $"Un nouveau CV a été déposé pour le poste '{offre?.Titre}' dans votre département.",
+                    Type = "Info",
+                    RelatedCvId = newCv.Id,
+                    RelatedOffreId = offreId
+                });
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         TempData["CvSubmitted"] = "1";

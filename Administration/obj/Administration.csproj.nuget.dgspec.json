@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\bennj\\Desktop\\CvParsing\\Administration\\Administration.csproj": {}
+    "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Administration\\Administration.csproj": {}
   },
   "projects": {
-    "C:\\Users\\bennj\\Desktop\\CvParsing\\Administration\\Administration.csproj": {
+    "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Administration\\Administration.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\bennj\\Desktop\\CvParsing\\Administration\\Administration.csproj",
+        "projectUniqueName": "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Administration\\Administration.csproj",
         "projectName": "Administration",
-        "projectPath": "C:\\Users\\bennj\\Desktop\\CvParsing\\Administration\\Administration.csproj",
+        "projectPath": "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Administration\\Administration.csproj",
         "packagesPath": "C:\\Users\\bennj\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\bennj\\Desktop\\CvParsing\\Administration\\obj\\",
+        "outputPath": "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Administration\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\bennj\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -50,17 +50,17 @@
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[10.0.5, )"
+              "version": "[10.0.0, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[10.0.5, )"
+              "version": "[10.0.0, )"
             },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.5, )"
+              "version": "[10.0.0, )"
             }
           },
           "imports": [

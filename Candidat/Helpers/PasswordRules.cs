@@ -11,7 +11,7 @@ public static class PasswordRules
         errorMessage = null;
         if (string.IsNullOrEmpty(password))
         {
-            errorMessage = $"Le mot de passe doit contenir au moins {MinLength} caractères, des lettres et des chiffres.";
+            errorMessage = $"Le mot de passe doit contenir au moins {MinLength} caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.";
             return false;
         }
 
@@ -21,15 +21,27 @@ public static class PasswordRules
             return false;
         }
 
-        if (!Regex.IsMatch(password, @"[A-Za-z]"))
+        if (!Regex.IsMatch(password, @"[A-Z]"))
         {
-            errorMessage = "Le mot de passe doit contenir au moins une lettre (A-Z, a-z).";
+            errorMessage = "Le mot de passe doit contenir au moins une lettre majuscule (A-Z).";
+            return false;
+        }
+
+        if (!Regex.IsMatch(password, @"[a-z]"))
+        {
+            errorMessage = "Le mot de passe doit contenir au moins une lettre minuscule (a-z).";
             return false;
         }
 
         if (!Regex.IsMatch(password, @"[0-9]"))
         {
             errorMessage = "Le mot de passe doit contenir au moins un chiffre (0-9).";
+            return false;
+        }
+
+        if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]"))
+        {
+            errorMessage = "Le mot de passe doit contenir au moins un caractère spécial (@, #, $, etc.).";
             return false;
         }
 

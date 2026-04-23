@@ -26,5 +26,6 @@ namespace Administration.Models
         
         // Photo de profil (maps to PhotoUrl column in database)
         public string? PhotoUrl { get; set; }
+
     }
 }

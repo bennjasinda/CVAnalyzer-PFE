@@ -36,8 +36,10 @@ namespace Administration.Controllers
         }
 
         // ================= LISTE UTILISATEURS (avec recherche et filtres) =================
-        public IActionResult Users(string? search, string? role, string? departement)
+        public IActionResult Users(string? search, string? role, string? departement, int page = 1)
         {
+            const int pageSize = 10;
+            page = page < 1 ? 1 : page;
             // Get current logged-in admin ID from session
             var currentUserId = int.Parse(HttpContext.Session.GetString("UserId") ?? "0");
             
@@ -82,7 +84,22 @@ namespace Administration.Controllers
             ViewBag.DepartementsList = allDepartements;
             ViewBag.CandidatPublicBaseUrl = _configuration["CandidatMedia:PublicBaseUrl"] ?? "";
 
-            return View(query.OrderBy(u => u.Id).ToList());
+            var totalItems = query.Count();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var pagedItems = query.OrderBy(u => u.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.Pagination = new PaginationViewModel
+            {
+                CurrentPage = page,
+                TotalPages = totalPages,
+                PageSize = pageSize,
+                TotalItems = totalItems
+            };
+
+            return View(pagedItems);
         }
 
         // ================= DÉTAIL UTILISATEUR =================
@@ -300,8 +317,10 @@ namespace Administration.Controllers
         }
 
         // ================= LISTE DES POSTES (avec recherche et filtre département) =================
-        public IActionResult Postes(string? search, string? departement)
+        public IActionResult Postes(string? search, string? departement, int page = 1)
         {
+            const int pageSize = 10;
+            page = page < 1 ? 1 : page;
             var query = _context.OffresEmploi.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -318,7 +337,23 @@ namespace Administration.Controllers
                 .OrderBy(d => d)
                 .ToList();
 
-            return View("~/Views/Admin/Postes.cshtml", query.ToList());
+            var totalItems = query.Count();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var pagedItems = query
+                .OrderByDescending(o => o.DateCreation)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.Pagination = new PaginationViewModel
+            {
+                CurrentPage = page,
+                TotalPages = totalPages,
+                PageSize = pageSize,
+                TotalItems = totalItems
+            };
+
+            return View("~/Views/Admin/Postes.cshtml", pagedItems);
         }
 
         // Alias pour DetailPoste (sans 's') pour éviter les erreurs 404

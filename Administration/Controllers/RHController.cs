@@ -21,31 +21,120 @@ namespace Administration.Controllers
         // ================= DASHBOARD =================
         public IActionResult Dashboard()
         {
+            var totalOffres = _context.OffresEmploi.Count();
+            var totalCvs = _context.Cvs.Count();
+            var totalMatches = _context.Matches.Count();
+            var totalAcceptes = _context.Cvs.Count(c => c.Statut == "Accepte");
+            var totalRefuses = _context.Cvs.Count(c => c.Statut == "Refuse");
+            var totalEnAttente = _context.Cvs.Count(c => c.Statut == "En attente");
+
+            // Calculate offers by month (last 6 months)
+            var sixMonthsAgo = DateTime.Now.AddMonths(-6);
+            var offresByMonth = _context.OffresEmploi
+                .Where(o => o.DateCreation >= sixMonthsAgo)
+                .GroupBy(o => new { o.DateCreation.Year, o.DateCreation.Month })
+                .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+                .Select(g => g.Count())
+                .ToList();
+
+            // Pad with zeros if less than 6 months
+            while (offresByMonth.Count < 6)
+            {
+                offresByMonth.Insert(0, 0);
+            }
+
             var stats = new DashboardStatsViewModel
             {
-                TotalOffres  = _context.OffresEmploi.Count(),
-                TotalCvs     = _context.Cvs.Count(),
-                TotalMatches = _context.Matches.Count()
+                TotalOffres = totalOffres,
+                TotalCvs = totalCvs,
+                TotalMatches = totalMatches,
+                TotalAcceptes = totalAcceptes,
+                TotalRefuses = totalRefuses,
+                CandidatsAcceptes = _context.Cvs
+                    .Include(c => c.Utilisateur)
+                    .Include(c => c.Offre)
+                    .Where(c => c.Statut == "Accepte")
+                    .OrderByDescending(c => c.UploadDate)
+                    .ToList()
             };
+
+            ViewBag.OffresByMonth = offresByMonth;
+            ViewBag.TotalEnAttente = totalEnAttente;
+
             return View(stats);
         }
 
-        // ================= LISTE DES POSTES =================
-        public IActionResult Postes(string? search)
+        // ================= EXPORT CSV CANDIDATS ACCEPTES =================
+        public IActionResult ExportAcceptedCsv()
         {
+            var acceptes = _context.Cvs
+                .Include(c => c.Utilisateur)
+                .Include(c => c.Offre)
+                .Where(c => c.Statut == "Accepte")
+                .OrderByDescending(c => c.UploadDate)
+                .ToList();
+
+            var csv = new System.Text.StringBuilder();
+            csv.AppendLine("Nom,Email,Poste,Département,Date Candidature,Score");
+
+            foreach (var cv in acceptes)
+            {
+                var match = _context.Matches
+                    .Where(m => m.CvId == cv.Id)
+                    .OrderByDescending(m => m.GlobalScore)
+                    .FirstOrDefault();
+                var score = match?.GlobalScore.ToString("F2") ?? "N/A";
+                var nom = cv.Utilisateur?.NomUtilisateur?.Replace(",", " ") ?? "";
+                var email = cv.Utilisateur?.Email?.Replace(",", " ") ?? "";
+                var poste = cv.Offre?.Titre?.Replace(",", " ") ?? "";
+                var dept = cv.Offre?.Departement?.Replace(",", " ") ?? "";
+                var date = cv.UploadDate.ToString("dd/MM/yyyy");
+                csv.AppendLine($"{nom},{email},{poste},{dept},{date},{score}");
+            }
+
+            // Use UTF-8 encoding with BOM for proper Excel display of French accents
+            var utf8WithBom = new System.Text.UTF8Encoding(true);
+            var bytes = utf8WithBom.GetBytes(csv.ToString());
+            var fileName = $"candidats_acceptes_{DateTime.Now:yyyyMMdd}.csv";
+            return File(bytes, "text/csv", fileName);
+        }
+
+        // ================= LISTE DES POSTES =================
+        public IActionResult Postes(string? search, int page = 1)
+        {
+            const int pageSize = 10;
+            page = page < 1 ? 1 : page;
+
             var query = _context.OffresEmploi.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(o => o.Titre.Contains(search) || o.Departement.Contains(search));
 
+            var totalItems = query.Count();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var pagedItems = query
+                .OrderByDescending(o => o.DateCreation)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             ViewBag.Search = search;
-            return View(query.ToList());
+            ViewBag.Pagination = new PaginationViewModel
+            {
+                CurrentPage = page,
+                TotalPages = totalPages,
+                PageSize = pageSize,
+                TotalItems = totalItems
+            };
+            return View(pagedItems);
         }
 
         // ================= DÉTAIL D'UN POSTE =================
-        // ✅ ACTION AJOUTÉE
-        public async Task<IActionResult> DetailPoste(int id)
+        public async Task<IActionResult> DetailPoste(int id, int page = 1)
         {
+            const int pageSize = 8;
+            page = page < 1 ? 1 : page;
+
             await MatchIntegrationHelper.EnsureMatchesForOffreAsync(_context, id);
 
             var offre = await _context.OffresEmploi
@@ -60,11 +149,21 @@ namespace Administration.Controllers
                 return NotFound();
             }
 
-            var candidats = offre.Cvs
+            var allCvs = offre.Cvs
                 .Where(cv => cv.Utilisateur != null)
+                .OrderByDescending(cv => cv.UploadDate)
+                .ToList();
+
+            var totalItems = allCvs.Count;
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var pagedCvs = allCvs
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var candidats = pagedCvs
                 .Select(cv => cv.Utilisateur)
                 .DistinctBy(u => u.Id)
-                .OrderByDescending(u => u.DateCreation)
                 .ToList();
 
             var cvByUserId = offre.Cvs
@@ -78,6 +177,9 @@ namespace Administration.Controllers
                     g => g.SelectMany(cv => cv.Matches).OrderByDescending(m => m.GlobalScore).FirstOrDefault()?.GlobalScore ?? 0f
                 );
 
+            var statusByUserId = pagedCvs
+                .ToDictionary(cv => cv.UtilisateurId, cv => cv.Statut);
+
             var viewModel = new PosteDetailViewModel
             {
                 Offre = offre,
@@ -86,6 +188,15 @@ namespace Administration.Controllers
 
             ViewBag.CvByUserId = cvByUserId;
             ViewBag.ScoreByUserId = scoreByUserId;
+            ViewBag.StatusByUserId = statusByUserId;
+            ViewBag.TotalCvs = totalItems;
+            ViewBag.Pagination = new PaginationViewModel
+            {
+                CurrentPage = page,
+                TotalPages = totalPages,
+                PageSize = pageSize,
+                TotalItems = totalItems
+            };
 
             return View(viewModel);
         }
@@ -220,8 +331,11 @@ namespace Administration.Controllers
         }
 
         // ================= RÉSULTATS CV =================
-        public IActionResult ResultatsCV(int? offreId)
+        public IActionResult ResultatsCV(int? offreId, int page = 1)
         {
+            const int pageSize = 10;
+            page = page < 1 ? 1 : page;
+
             var offres = _context.OffresEmploi.ToList();
             ViewBag.Offres = offres;
 
@@ -229,14 +343,29 @@ namespace Administration.Controllers
             {
                 MatchIntegrationHelper.EnsureMatchesForOffreAsync(_context, offreId.Value).GetAwaiter().GetResult();
 
-                var matches = _context.Matches
+                var query = _context.Matches
                     .Include(m => m.Cv)
                         .ThenInclude(c => c.DonneesCv)
                     .Include(m => m.Cv)
                         .ThenInclude(c => c.Offre)
                     .Where(m => m.Cv.OffreId == offreId.Value)
-                    .OrderByDescending(m => m.GlobalScore)
+                    .OrderByDescending(m => m.GlobalScore);
+
+                var totalItems = query.Count();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+                var matches = query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
                     .ToList();
+
+                ViewBag.SelectedOffreId = offreId.Value;
+                ViewBag.Pagination = new PaginationViewModel
+                {
+                    CurrentPage = page,
+                    TotalPages = totalPages,
+                    PageSize = pageSize,
+                    TotalItems = totalItems
+                };
                 return View(matches);
             }
 
@@ -257,6 +386,74 @@ namespace Administration.Controllers
 
             if (match == null) return NotFound();
             return View("~/Views/Admin/CvResult.cshtml", match);
+        }
+
+        // ================= ACCEPTER / REFUSER CANDIDATURE =================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AccepterCandidature(int cvId, int offreId)
+        {
+            var cv = _context.Cvs.Include(c => c.Utilisateur).Include(c => c.Offre).FirstOrDefault(c => c.Id == cvId);
+            if (cv == null) return NotFound();
+
+            cv.Statut = "Accepte";
+            _context.SaveChanges();
+
+            // Notification au candidat
+            _context.Notifications.Add(new Notification
+            {
+                UtilisateurId = cv.UtilisateurId,
+                Titre = "Candidature acceptée",
+                Message = "Votre candidature a été acceptée. Veuillez attendre, vous serez contacté via votre email ou numéro de téléphone.",
+                Type = "Success",
+                RelatedCvId = cv.Id,
+                RelatedOffreId = offreId
+            });
+
+            // Notification aux RH
+            var rhs = _context.Utilisateurs.Where(u => u.Role == "RH").ToList();
+            foreach (var rh in rhs)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UtilisateurId = rh.Id,
+                    Titre = "Candidature acceptée",
+                    Message = $"Une candidature pour le poste '{cv.Offre?.Titre}' a été acceptée.",
+                    Type = "Info",
+                    RelatedCvId = cv.Id,
+                    RelatedOffreId = offreId
+                });
+            }
+
+            _context.SaveChanges();
+            TempData["Success"] = "Candidature acceptée avec succès.";
+            return RedirectToAction("DetailPoste", new { id = offreId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RefuserCandidature(int cvId, int offreId)
+        {
+            var cv = _context.Cvs.Include(c => c.Utilisateur).Include(c => c.Offre).FirstOrDefault(c => c.Id == cvId);
+            if (cv == null) return NotFound();
+
+            cv.Statut = "Refuse";
+            _context.SaveChanges();
+
+            // Notification au candidat
+            _context.Notifications.Add(new Notification
+            {
+                UtilisateurId = cv.UtilisateurId,
+                Titre = "Candidature refusée",
+                Message = "Votre candidature a été refusée. Nous vous remercions pour votre intérêt.",
+                Type = "Danger",
+                RelatedCvId = cv.Id,
+                RelatedOffreId = offreId
+            });
+            _context.SaveChanges();
+
+            TempData["Success"] = "Candidature refusée avec succès.";
+            return RedirectToAction("DetailPoste", new { id = offreId });
         }
 
         // ================= PROFIL CANDIDAT =================

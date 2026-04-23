@@ -22,4 +22,6 @@ public class Utilisateur
     public string? Departements { get; set; }  // départements gérés (pour directeur)
     public string? PhotoUrl { get; set; }  // URL de la photo de profil
 
+   
+
 }

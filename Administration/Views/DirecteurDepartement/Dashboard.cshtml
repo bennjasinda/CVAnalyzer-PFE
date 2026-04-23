@@ -370,14 +370,61 @@
                     <a asp-controller="DirecteurDepartement" asp-action="Postes" class="btn btn-outline-warning btn-action">
                         <i class="bi bi-briefcase"></i>Voir les postes
                     </a>
-                    <a asp-controller="DirecteurDepartement" asp-action="ResultatsCV" class="btn btn-outline-success btn-action">
-                        <i class="bi bi-file-earmark-text"></i>Résultats CV
-                    </a>
+                    
                     <a asp-controller="DirecteurDepartement" asp-action="Profile" class="btn btn-outline-primary btn-action">
                         <i class="bi bi-person"></i>Mon profil
                     </a>
                 </div>
             </div>
+
+            @if (Model.CandidatsAcceptes != null && Model.CandidatsAcceptes.Any())
+            {
+                <div class="card shadow-sm quick-actions-card mt-4">
+                    <div class="card-header bg-white fw-semibold border-0 pt-3 ps-4 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-check-circle me-2 text-success"></i>Candidats acceptés</span>
+                        <a asp-action="ExportAcceptedCsv" class="btn btn-sm btn-success">
+                            <i class="bi bi-download me-1"></i>Exporter CSV
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Email</th>
+                                        <th>Poste</th>
+                                        <th>Date candidature</th>
+                                        <th>Statut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var cv in Model.CandidatsAcceptes)
+                                    {
+                                        <tr>
+                                            <td>@(cv.Utilisateur?.NomUtilisateur ?? "Candidat")</td>
+                                            <td>@(cv.Utilisateur?.Email ?? "—")</td>
+                                            <td>@(cv.Offre?.Titre ?? "—")</td>
+                                            <td>@cv.UploadDate.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Acceptée
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a asp-action="CvResult" asp-route-offreId="@cv.OffreId" asp-route-cvId="@cv.Id" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-eye me-1"></i>Voir CV
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
         <div class="col-lg-4">
             <div class="card recent-activity">
@@ -412,14 +459,14 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Applications Chart (Doughnut)
+        // Applications Chart (Doughnut) - Real data
         const applicationsCtx = document.getElementById('applicationsChart').getContext('2d');
         new Chart(applicationsCtx, {
             type: 'doughnut',
             data: {
                 labels: ['En attente', 'Acceptés', 'Refusés'],
                 datasets: [{
-                    data: [@Model.TotalCvs - @ViewBag.AcceptedCount - @ViewBag.RejectedCount, @ViewBag.AcceptedCount, @ViewBag.RejectedCount],
+                    data: [@ViewBag.TotalEnAttente, @Model.TotalAcceptes, @Model.TotalRefuses],
                     backgroundColor: [
                         '#fbbf24',
                         '#10b981',

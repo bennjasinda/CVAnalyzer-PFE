@@ -83,7 +83,7 @@
     @if (userRole == "Admin")
     {
         <div class="nav-section-label">Principal</div>
-        <a asp-controller="Admin" asp-action="Dashboard" class="nav-item"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+        <a asp-controller="Admin" asp-action="Dashboard" class="nav-item"><i class="bi bi-speedometer2"></i><span>Tableau de bord</span></a>
         <div class="nav-section-label">Gestion Utilisateurs</div>
         <a asp-controller="Admin" asp-action="Users" class="nav-item"><i class="bi bi-people"></i><span>Utilisateurs</span></a>
         <div class="nav-section-label">Gestion Postes</div>
@@ -94,7 +94,7 @@
     else if (userRole == "RH")
     {
         <div class="nav-section-label">Principal</div>
-        <a asp-controller="RH" asp-action="Dashboard" class="nav-item"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+        <a asp-controller="RH" asp-action="Dashboard" class="nav-item"><i class="bi bi-speedometer2"></i><span>Tableau de bord</span></a>
         <div class="nav-section-label">Gestion Postes</div>
         <a asp-controller="RH" asp-action="Postes" class="nav-item"><i class="bi bi-briefcase"></i><span>Postes</span></a>
         <div class="nav-section-label">Compte</div>
@@ -103,7 +103,7 @@
     else if (userRole == "Directeur")
     {
         <div class="nav-section-label">Principal</div>
-        <a asp-controller="DirecteurDepartement" asp-action="Dashboard" class="nav-item"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+        <a asp-controller="DirecteurDepartement" asp-action="Dashboard" class="nav-item"><i class="bi bi-speedometer2"></i><span>Tableau de bord</span></a>
         <div class="nav-section-label">Gestion Postes</div>
         <a asp-controller="DirecteurDepartement" asp-action="Postes" class="nav-item"><i class="bi bi-briefcase"></i><span>Postes</span></a>
         <div class="nav-section-label">Compte</div>
@@ -136,6 +136,30 @@
         </button>
         <h1>@ViewData["Title"]</h1>
         <div class="d-flex align-items-center gap-3">
+            @if (userRole == "RH" || userRole == "Directeur")
+            {
+                <a href="@(userRole == "RH" ? Url.Action("Index", "Notifications", new { area = "" }) : Url.Action("Index", "Notifications", new { area = "" }))" class="position-relative text-dark" title="Notifications">
+                    <i class="bi bi-bell fs-5"></i>
+                    @{
+                        var userIdStr = Context.Session.GetString("UserId");
+                        var unreadCount = 0;
+                        if (!string.IsNullOrEmpty(userIdStr) && int.TryParse(userIdStr, out var notifUserId))
+                        {
+                            var db = Context.RequestServices.GetService(typeof(Administration.Data.ApplicationDbContext)) as Administration.Data.ApplicationDbContext;
+                            if (db != null)
+                            {
+                                unreadCount = db.Notifications.Count(n => n.UtilisateurId == notifUserId && !n.IsRead);
+                            }
+                        }
+                    }
+                    @if (unreadCount > 0)
+                    {
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                            @unreadCount
+                        </span>
+                    }
+                </a>
+            }
             <div class="dropdown">
                 <div class="topbar-user-avatar" data-bs-toggle="dropdown" aria-expanded="false">
                     @if (!string.IsNullOrEmpty(profileImageUrl))

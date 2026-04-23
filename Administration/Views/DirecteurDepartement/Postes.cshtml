@@ -292,21 +292,37 @@
             <!-- Pagination -->
             <div class="pagination-wrapper">
                 <div class="pagination-info">
-                    Affichage de <strong>1 à @Model.Count</strong> sur <strong>@Model.Count</strong> entrées
+                    @if (ViewBag.Pagination != null)
+                    {
+                        var startItem = (ViewBag.Pagination.CurrentPage - 1) * ViewBag.Pagination.PageSize + 1;
+                        var endItem = Math.Min(ViewBag.Pagination.CurrentPage * ViewBag.Pagination.PageSize, ViewBag.Pagination.TotalItems);
+                        <text>Affichage de <strong>@startItem à @endItem</strong> sur <strong>@ViewBag.Pagination.TotalItems</strong> entrées</text>
+                    }
+                    else
+                    {
+                        <text>Affichage de <strong>1 à @Model.Count</strong> sur <strong>@Model.Count</strong> entrées</text>
+                    }
                 </div>
-                <nav>
-                    <ul class="pagination mb-0" style="gap: 4px;">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Précédent</a>
-                        </li>
-                        <li class="page-item active">
-                            <a class="page-link" href="#" style="background: #f59e0b; border-color: #f59e0b; border-radius: 6px; color: white;">1</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Suivant</a>
-                        </li>
-                    </ul>
-                </nav>
+                @if (ViewBag.Pagination != null)
+                {
+                    <partial name="_Pagination" model="ViewBag.Pagination" />
+                }
+                else
+                {
+                    <nav>
+                        <ul class="pagination mb-0" style="gap: 4px;">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Précédent</a>
+                            </li>
+                            <li class="page-item active">
+                                <a class="page-link" href="#" style="background: #f59e0b; border-color: #f59e0b; border-radius: 6px; color: white;">1</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" style="border-radius: 6px; color: #64748b;">Suivant</a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
             </div>
         </div>
     }

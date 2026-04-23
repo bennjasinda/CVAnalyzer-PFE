@@ -11,6 +11,11 @@ namespace Administration.Models
         public float ExperienceScore { get; set; }
         public float GlobalScore { get; set; }
 
+        // Bonus scores for enhanced matching
+        public float BonusScore { get; set; }
+        public float SkillsBonusScore { get; set; }
+        public float EducationBonusScore { get; set; }
+
         public virtual Cv Cv { get; set; } = null!;
         public virtual OffreEmploi Offre { get; set; } = null!;
     }

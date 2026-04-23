@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "H48ePyh3FN8=",
+  "dgSpecHash": "wJBuQXiGEZk=",
   "success": true,
-  "projectFilePath": "C:\\Users\\bennj\\Desktop\\CvParsing\\Candidat\\CvParsing.csproj",
+  "projectFilePath": "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Candidat\\CvParsing.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\bennj\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\bennj\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
@@ -68,10 +68,22 @@
     {
       "code": "NU1902",
       "level": "Warning",
-      "message": "Le package 'MimeKit' 4.8.0 présente une vulnérabilité de gravité moyenne connue, https://github.com/advisories/GHSA-g7hc-96xr-gvvx.",
-      "projectPath": "C:\\Users\\bennj\\Desktop\\CvParsing\\Candidat\\CvParsing.csproj",
+      "message": "Le package 'MailKit' 4.8.0 présente une vulnérabilité de gravité moyenne connue, https://github.com/advisories/GHSA-9j88-vvj5-vhgr.",
+      "projectPath": "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Candidat\\CvParsing.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\bennj\\Desktop\\CvParsing\\Candidat\\CvParsing.csproj",
+      "filePath": "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Candidat\\CvParsing.csproj",
+      "libraryId": "MailKit",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Le package 'MimeKit' 4.8.0 présente une vulnérabilité de gravité moyenne connue, https://github.com/advisories/GHSA-g7hc-96xr-gvvx.",
+      "projectPath": "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Candidat\\CvParsing.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\bennj\\Downloads\\CVAnalyzer-PFE\\Candidat\\CvParsing.csproj",
       "libraryId": "MimeKit",
       "targetGraphs": [
         "net10.0"

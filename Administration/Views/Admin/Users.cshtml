@@ -748,6 +748,14 @@
         <h6>Aucun utilisateur trouvé</h6>
         <p>Aucun utilisateur ne correspond à votre recherche.</p>
     </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.Pagination != null)
+    {
+        <div class="d-flex justify-content-center mt-4">
+            <partial name="_Pagination" model="ViewBag.Pagination" />
+        </div>
+    }
 </div>
 
 @section Scripts {

@@ -14,6 +14,9 @@ public class AppDbContext : DbContext
     public DbSet<CvCompetence> CvCompetences { get; set; }
     public DbSet<DonneesCv> DonneesCvs { get; set; }
     public DbSet<Match> Matches { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<CvExperience> CvExperiences { get; set; }
+    public DbSet<CvDiplome> CvDiplomes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,5 +41,19 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.UtilisateurId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        // Cv -> CvExperience
+        modelBuilder.Entity<CvExperience>()
+            .HasOne(ce => ce.Cv)
+            .WithMany(c => c.CvExperiences)
+            .HasForeignKey(ce => ce.CvId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Cv -> CvDiplome
+        modelBuilder.Entity<CvDiplome>()
+            .HasOne(cd => cd.Cv)
+            .WithMany(c => c.CvDiplomes)
+            .HasForeignKey(cd => cd.CvId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

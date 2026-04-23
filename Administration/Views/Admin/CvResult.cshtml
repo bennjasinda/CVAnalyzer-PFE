@@ -124,6 +124,32 @@
         font-size: 14px;
     }
 
+    /* View CV Button */
+    .view-cv-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 24px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .view-cv-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        color: white;
+    }
+
+    .view-cv-btn i {
+        font-size: 16px;
+    }
+
     /* Score Hero Section */
     .score-hero {
         background: white;
@@ -275,6 +301,21 @@
     .criteria-bar-fill.high { background: linear-gradient(90deg, #10b981, #34d399); }
     .criteria-bar-fill.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
     .criteria-bar-fill.low { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .criteria-bar-fill.bonus { background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b); animation: shimmer 2s infinite; }
+
+    .bonus-criteria {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #f59e0b;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 12px;
+    }
+
+    @@keyframes shimmer {
+        0% { opacity: 1; }
+        50% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
 
     .criteria-weight {
         font-size: 12px;
@@ -436,6 +477,129 @@
         line-height: 1.5;
     }
 
+    /* CV Details Section */
+    .cv-details-section {
+        background: white;
+        border-radius: 20px;
+        padding: 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .cv-details-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 24px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .cv-details-title i {
+        color: #6366f1;
+    }
+
+    .cv-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+    }
+
+    .cv-detail-card {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 4px solid #6366f1;
+    }
+
+    .cv-detail-card.experience {
+        border-left-color: #10b981;
+    }
+
+    .cv-detail-card.education {
+        border-left-color: #f59e0b;
+    }
+
+    .cv-detail-card.skills {
+        border-left-color: #6366f1;
+    }
+
+    .cv-detail-card.other {
+        border-left-color: #8b5cf6;
+    }
+
+    .cv-detail-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .cv-detail-card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .cv-detail-card.experience .cv-detail-card-icon {
+        background: #ecfdf5;
+        color: #10b981;
+    }
+
+    .cv-detail-card.education .cv-detail-card-icon {
+        background: #fffbeb;
+        color: #f59e0b;
+    }
+
+    .cv-detail-card.skills .cv-detail-card-icon {
+        background: #eef2ff;
+        color: #6366f1;
+    }
+
+    .cv-detail-card.other .cv-detail-card-icon {
+        background: #f5f3ff;
+        color: #8b5cf6;
+    }
+
+    .cv-detail-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .cv-detail-content {
+        color: #475569;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .cv-detail-content strong {
+        color: #1e293b;
+    }
+
+    .skills-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .skill-tag {
+        background: white;
+        color: #6366f1;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid #e0e7ff;
+    }
+
     @@media (max-width: 1024px) {
         .charts-grid { grid-template-columns: 1fr; }
         .info-grid { grid-template-columns: repeat(2, 1fr); }
@@ -495,6 +659,126 @@
                 }
             </div>
         </div>
+        @if (!string.IsNullOrEmpty(Model.Cv?.CheminFichier))
+        {
+            <div style="margin-left: auto;">
+                <a href="@Model.Cv.CheminFichier" target="_blank" class="view-cv-btn">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    Voir le CV
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- CV Details Section -->
+    <div class="cv-details-section">
+        <h3 class="cv-details-title">
+            <i class="bi bi-file-earmark-text"></i>
+            D&eacute;tails du CV
+        </h3>
+        <div class="cv-detail-grid">
+            <!-- Expérience -->
+            <div class="cv-detail-card experience">
+                <div class="cv-detail-card-header">
+                    <div class="cv-detail-card-icon">
+                        <i class="bi bi-briefcase"></i>
+                    </div>
+                    <h4 class="cv-detail-card-title">Exp&eacute;rience</h4>
+                </div>
+                <div class="cv-detail-content">
+                    @{
+                        var experience = Model.Cv?.DonneesCv?.Experience;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(experience))
+                    {
+                        <p>@experience</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucune exp&eacute;rience indiqu&eacute;e</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Formation -->
+            <div class="cv-detail-card education">
+                <div class="cv-detail-card-header">
+                    <div class="cv-detail-card-icon">
+                        <i class="bi bi-mortarboard"></i>
+                    </div>
+                    <h4 class="cv-detail-card-title">Formation / Dipl&ocirc;me</h4>
+                </div>
+                <div class="cv-detail-content">
+                    @{
+                        var education = Model.Cv?.DonneesCv?.NiveauEducation;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(education))
+                    {
+                        <p><strong>Niveau :</strong> @education</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucun dipl&ocirc;me indiqu&eacute;</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Compétences -->
+            <div class="cv-detail-card skills">
+                <div class="cv-detail-card-header">
+                    <div class="cv-detail-card-icon">
+                        <i class="bi bi-code-slash"></i>
+                    </div>
+                    <h4 class="cv-detail-card-title">Comp&eacute;tences</h4>
+                </div>
+                <div class="cv-detail-content">
+                    @{
+                        var competences = Model.Cv?.DonneesCv?.Competences;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(competences))
+                    {
+                        <div class="skills-list">
+                            @foreach (var skill in competences.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                            {
+                                <span class="skill-tag">@skill.Trim()</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucune comp&eacute;tence indiqu&eacute;e</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Informations complémentaires -->
+            <div class="cv-detail-card other">
+                <div class="cv-detail-card-header">
+                    <div class="cv-detail-card-icon">
+                        <i class="bi bi-info-circle"></i>
+                    </div>
+                    <h4 class="cv-detail-card-title">Informations compl&eacute;mentaires</h4>
+                </div>
+                <div class="cv-detail-content">
+                    @{
+                        var autresInfos = Model.Cv?.DonneesCv?.AutresInfos;
+                        var telephone = Model.Cv?.DonneesCv?.Telephone;
+                    }
+                    @if (!string.IsNullOrWhiteSpace(telephone) && telephone != "—")
+                    {
+                        <p><strong><i class="bi bi-telephone"></i> T&eacute;l&eacute;phone :</strong> @telephone</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(autresInfos))
+                    {
+                        <p><strong>Autres :</strong> @autresInfos</p>
+                    }
+                    @if ((string.IsNullOrWhiteSpace(autresInfos) || string.IsNullOrWhiteSpace(telephone) || telephone == "—"))
+                    {
+                        <p class="text-muted">Aucune information compl&eacute;mentaire</p>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Score Hero Section -->
@@ -552,6 +836,30 @@
                 </div>
                 <div class="criteria-weight">Poids : 30% du score global</div>
             </div>
+
+            <!-- Bonus Score -->
+            @if (Model.BonusScore > 0)
+            {
+                <div class="criteria-item bonus-criteria">
+                    <div class="criteria-header">
+                        <span class="criteria-name"><i class="bi bi-star-fill" style="color: #f59e0b;"></i> Bonus (Compétences + Diplômes)</span>
+                        <span class="criteria-value" style="color: #f59e0b;">+@Model.BonusScore.ToString("F0") pts</span>
+                    </div>
+                    <div class="criteria-bar">
+                        <div class="criteria-bar-fill bonus" data-width="@Math.Min(Model.BonusScore, 100)"></div>
+                    </div>
+                    <div class="criteria-weight">
+                        @if (Model.SkillsBonusScore > 0)
+                        {
+                            <span>Bonus compétences: +@Model.SkillsBonusScore.ToString("F0") pts</span>
+                        }
+                        @if (Model.EducationBonusScore > 0)
+                        {
+                            <span> | Bonus diplôme: +@Model.EducationBonusScore.ToString("F0") pts</span>
+                        }
+                    </div>
+                </div>
+            }
         </div>
     </div>
 

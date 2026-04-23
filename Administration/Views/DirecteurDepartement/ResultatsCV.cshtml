@@ -87,7 +87,14 @@
         <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <strong>Candidats pour @offreSelectionnee?.Titre</strong>
-                <span class="badge bg-secondary ms-2">@Model.Count candidat(s)</span>
+                @if (ViewBag.Pagination != null)
+                {
+                    <span class="badge bg-secondary ms-2">@ViewBag.Pagination.TotalItems candidat(s)</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary ms-2">@Model.Count candidat(s)</span>
+                }
             </div>
 
             <div class="card-body p-0">
@@ -146,6 +153,13 @@
                     </table>
                 </div>
             </div>
+
+            @if (ViewBag.Pagination != null)
+            {
+                <div class="card-footer bg-white">
+                    <partial name="_Pagination" model="ViewBag.Pagination" />
+                </div>
+            }
         </div>
     }
     else if (selectedId.HasValue)

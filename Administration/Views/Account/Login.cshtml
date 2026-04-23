@@ -1,7 +1,7 @@
 @model LoginViewModel
 @{
     Layout = "_LoginLayout";
-    ViewData["Title"] = "Sign In";
+    ViewData["Title"] = "Connexion";
 }
 
 <style>
@@ -16,8 +16,8 @@
 </style>
 
 <div class="card p-4">
-    <h2 class="text-center mb-2">Sign In</h2>
-    <p class="text-center text-muted">Welcome back!</p>
+    <h2 class="text-center mb-2">Connexion</h2>
+    <p class="text-center text-muted">Bonjour!</p>
 
     <form method="post">
         @Html.AntiForgeryToken()
@@ -40,11 +40,9 @@
             <span asp-validation-for="MotPasse" class="text-danger small"></span>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100">Sign In</button>
+        <button type="submit" class="btn btn-primary w-100">Connexion</button>
 
-        <div class="mt-3 text-center">
-            Don't have an account? <a asp-action="Register">Sign Up</a>
-        </div>
+        
     </form>
 </div>
 

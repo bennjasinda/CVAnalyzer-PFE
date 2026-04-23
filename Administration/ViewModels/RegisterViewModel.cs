@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Administration.Validation;
 
 namespace Administration.ViewModels
 {
@@ -13,6 +14,7 @@ namespace Administration.ViewModels
 
         [Required]
         [DataType(DataType.Password)]
+        [StrongPassword]
         public string MotPasse { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]

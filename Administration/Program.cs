@@ -1,5 +1,6 @@
 using Administration.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,18 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Serve CV files from Candidat project
+var candidatUploadsPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "Candidat", "wwwroot", "uploads", "cvs"));
+if (Directory.Exists(candidatUploadsPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(candidatUploadsPath),
+        RequestPath = "/uploads/cvs"
+    });
+}
+
 app.UseRouting();
 
 // Sessions AVANT Authorization

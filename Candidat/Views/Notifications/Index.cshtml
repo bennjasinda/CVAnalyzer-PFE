@@ -1,21 +1,184 @@
-﻿@{
+﻿@model List<CvParsing.Models.Notification>
+@{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Notifications";
 }
 
-<div class="page-strip">
-    <div class="container">
-        <nav class="page-strip__nav" aria-label="Breadcrumb">
-            <a href="/Home/Index">Accueil</a><span class="page-strip__sep">›</span><span class="page-strip__current">Notifications</span>
-        </nav>
-    </div>
-</div>
+<style>
+    .notifications-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
 
-<div class="container pt-100 pb-70">
-    <div class="section-title text-center">
+    .notifications-header {
+        margin-bottom: 32px;
+    }
+
+    .notifications-header h2 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+
+    .notifications-header p {
+        color: #64748b;
+        font-size: 15px;
+    }
+
+    .notification-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border-left: 4px solid #6366f1;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .notification-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .notification-card.success {
+        border-left-color: #10b981;
+    }
+
+    .notification-card.danger {
+        border-left-color: #ef4444;
+    }
+
+    .notification-card.warning {
+        border-left-color: #f59e0b;
+    }
+
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .notification-icon.info {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+
+    .notification-icon.success {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .notification-icon.danger {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .notification-icon.warning {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .notification-content {
+        flex: 1;
+    }
+
+    .notification-title {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 15px;
+        margin-bottom: 4px;
+    }
+
+    .notification-message {
+        color: #475569;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .notification-date {
+        color: #94a3b8;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    .empty-notifications {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-notifications i {
+        font-size: 64px;
+        color: #cbd5e1;
+        margin-bottom: 16px;
+    }
+
+    .empty-notifications h4 {
+        color: #475569;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .empty-notifications p {
+        color: #94a3b8;
+        font-size: 14px;
+    }
+</style>
+
+<div class="notifications-container">
+    <div class="notifications-header">
         <h2>Notifications</h2>
-        <p class="margin-auto">Cette page est un espace réservé. Les notifications seront disponibles prochainement.</p>
+        <p>Consultez l'historique de vos notifications</p>
     </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-notifications">
+            <i class='bx bx-bell-off'></i>
+            <h4>Aucune notification</h4>
+            <p>Vous n'avez pas encore recu de notifications.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var notification in Model)
+        {
+            var typeClass = notification.Type?.ToLowerInvariant() ?? "info";
+            <div class="notification-card @typeClass">
+                <div class="notification-icon @typeClass">
+                    @switch (typeClass)
+                    {
+                        case "success":
+                            <i class='bx bx-check-circle'></i>
+                            break;
+                        case "danger":
+                            <i class='bx bx-x-circle'></i>
+                            break;
+                        case "warning":
+                            <i class='bx bx-error'></i>
+                            break;
+                        default:
+                            <i class='bx bx-info-circle'></i>
+                            break;
+                    }
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">@notification.Titre</div>
+                    <div class="notification-message">@notification.Message</div>
+                    <div class="notification-date">
+                        <i class='bx bx-time'></i> @notification.DateCreation.ToString("dd MMM yyyy à HH:mm")
+                    </div>
+                </div>
+            </div>
+        }
+    }
 </div>
-
-

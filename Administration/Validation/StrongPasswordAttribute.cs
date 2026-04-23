@@ -6,7 +6,7 @@ namespace Administration.Validation;
 public sealed class StrongPasswordAttribute : ValidationAttribute
 {
     public StrongPasswordAttribute()
-        : base("Le mot de passe doit contenir au moins 8 caractères, des lettres et des chiffres.")
+        : base("Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.")
     {
     }
 

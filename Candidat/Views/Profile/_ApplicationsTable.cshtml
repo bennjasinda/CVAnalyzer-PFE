@@ -35,7 +35,7 @@
                 <th>Intitulé du poste</th>
                 <th>Département</th>
                 <th>Date de candidature</th>
-                <th>Score</th>
+               
                 <th>Statut</th>
                 <th></th>
             </tr>
@@ -57,21 +57,7 @@
                         <td>@a.TitrePoste</td>
                         <td>@a.DepartementOuEntreprise</td>
                         <td>@a.DateCandidature.ToString("dd/MM/yyyy HH:mm")</td>
-                        <td>
-                            @if (a.GlobalScore > 0)
-                            {
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <div style="width:60px; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
-                                        <div style="width:@scorePercent%; height:100%; background:@scoreColor; border-radius:4px;"></div>
-                                    </div>
-                                    <span style="font-weight:600; font-size:13px; color:@scoreColor;">@scorePercent%</span>
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="text-muted" style="font-size:13px;">—</span>
-                            }
-                        </td>
+                       
                         <td><span class="cp-badge @BadgeClass(a.Statut)">@BadgeText(a.Statut)</span></td>
                         <td class="text-end">
                             <a class="cp-btn-offer" href="@Url.Action("Details", "Offre", new { id = a.OffreId })">Voir l'offre</a>

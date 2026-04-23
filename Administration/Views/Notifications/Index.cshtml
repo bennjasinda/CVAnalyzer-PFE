@@ -1,0 +1,71 @@
+@model List<Administration.Models.Notification>
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold mb-3">
+                <i class="bi bi-bell me-2"></i>Notifications
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            @if (Model.Any())
+            {
+                <div class="list-group">
+                    @foreach (var notif in Model)
+                    {
+                        <div class="list-group-item list-group-item-action @(notif.IsRead ? "" : "fw-bold bg-light")">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2">
+                                        @if (notif.Type == "Success")
+                                        {
+                                            <span class="badge bg-success me-2"><i class='bx bx-check'></i></span>
+                                        }
+                                        else if (notif.Type == "Danger")
+                                        {
+                                            <span class="badge bg-danger me-2"><i class='bx bx-x'></i></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info me-2"><i class='bx bx-info-circle'></i></span>
+                                        }
+                                        @notif.Titre
+                                    </h6>
+                                    <p class="mb-2 text-muted">@notif.Message</p>
+                                    @if (notif.RelatedOffreId.HasValue)
+                                    {
+                                        <small class="text-muted">
+                                            <i class="bi bi-briefcase me-1"></i>
+                                            Offre #@notif.RelatedOffreId
+                                        </small>
+                                    }
+                                </div>
+                                <div class="text-end ms-3">
+                                    <small class="text-muted d-block">@notif.DateCreation.ToString("dd/MM/yyyy HH:mm")</small>
+                                    @if (!notif.IsRead)
+                                    {
+                                        <span class="badge bg-primary mt-1">Non lu</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-bell-slash text-muted" style="font-size: 4rem;"></i>
+                    <p class="text-muted mt-3">Aucune notification pour le moment.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

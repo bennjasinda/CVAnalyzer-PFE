@@ -1,0 +1,53 @@
+@model Administration.ViewModels.PaginationViewModel
+@{
+    if (Model == null || Model.TotalPages <= 1) return;
+
+    var routeValues = ViewContext.RouteData.Values;
+    var query = Context.Request.Query;
+}
+
+<nav aria-label="Pagination">
+    <ul class="pagination mb-0" style="gap: 4px;">
+        @if (Model.HasPrevious)
+        {
+            <li class="page-item">
+                <a class="page-link" href="?page=@(Model.CurrentPage - 1)" style="border-radius: 6px; color: #64748b;">Précédent</a>
+            </li>
+        }
+        else
+        {
+            <li class="page-item disabled">
+                <span class="page-link" style="border-radius: 6px; color: #94a3b8;">Précédent</span>
+            </li>
+        }
+
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            if (i == Model.CurrentPage)
+            {
+                <li class="page-item active">
+                    <span class="page-link" style="background: #6366f1; border-color: #6366f1; border-radius: 6px; color: white;">@i</span>
+                </li>
+            }
+            else
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?page=@i" style="border-radius: 6px; color: #64748b;">@i</a>
+                </li>
+            }
+        }
+
+        @if (Model.HasNext)
+        {
+            <li class="page-item">
+                <a class="page-link" href="?page=@(Model.CurrentPage + 1)" style="border-radius: 6px; color: #64748b;">Suivant</a>
+            </li>
+        }
+        else
+        {
+            <li class="page-item disabled">
+                <span class="page-link" style="border-radius: 6px; color: #94a3b8;">Suivant</span>
+            </li>
+        }
+    </ul>
+</nav>

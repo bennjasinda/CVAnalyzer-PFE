@@ -28,13 +28,18 @@ public class UserNavViewComponent : ViewComponent
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId);
 
+        var unreadCount = await _context.Notifications
+            .AsNoTracking()
+            .CountAsync(n => n.UtilisateurId == userId && !n.IsRead);
+
         return View(new UserNavVm
         {
             IsAuthenticated = true,
             UserId = userId,
             UserName = userName,
             Designation = null,
-            PhotoUrl = utilisateur?.PhotoUrl
+            PhotoUrl = utilisateur?.PhotoUrl,
+            UnreadNotifications = unreadCount
         });
     }
 
@@ -45,6 +50,7 @@ public class UserNavViewComponent : ViewComponent
         public string UserName { get; set; } = "";
         public string? Designation { get; set; }
         public string? PhotoUrl { get; set; }
+        public int UnreadNotifications { get; set; }
     }
 }
 
