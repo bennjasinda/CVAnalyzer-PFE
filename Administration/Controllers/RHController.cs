@@ -99,6 +99,83 @@ namespace Administration.Controllers
             return File(bytes, "text/csv", fileName);
         }
 
+        // ================= EXPORT PDF CANDIDATS ACCEPTES =================
+        public IActionResult ExportAcceptedPdf()
+        {
+            var acceptes = _context.Cvs
+                .Include(c => c.Utilisateur)
+                .Include(c => c.Offre)
+                .Where(c => c.Statut == "Accepte")
+                .OrderByDescending(c => c.UploadDate)
+                .ToList();
+
+            // Generate HTML for PDF
+            var html = @"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #4CAF50; color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .footer { margin-top: 30px; text-align: center; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Candidats Acceptés</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Poste</th>
+                <th>Score</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>";
+
+            foreach (var cv in acceptes)
+            {
+                var match = _context.Matches
+                    .Where(m => m.CvId == cv.Id)
+                    .OrderByDescending(m => m.GlobalScore)
+                    .FirstOrDefault();
+                var score = match?.GlobalScore.ToString("F1") ?? "N/A";
+                var nom = cv.Utilisateur?.NomUtilisateur ?? "";
+                var email = cv.Utilisateur?.Email ?? "";
+                var poste = cv.Offre?.Titre ?? "";
+                var date = cv.UploadDate.ToString("dd/MM/yyyy");
+
+                html += $@"
+            <tr>
+                <td>{System.Net.WebUtility.HtmlEncode(nom)}</td>
+                <td>{System.Net.WebUtility.HtmlEncode(email)}</td>
+                <td>{System.Net.WebUtility.HtmlEncode(poste)}</td>
+                <td>{score}</td>
+                <td>{date}</td>
+            </tr>";
+            }
+
+            html += @"
+        </tbody>
+    </table>
+    <div class='footer'>
+        <p>Généré le " + DateTime.Now.ToString("dd/MM/yyyy à HH:mm") + @"</p>
+    </div>
+</body>
+</html>";
+
+            // Return as HTML (user can print to PDF from browser)
+            var bytes = System.Text.Encoding.UTF8.GetBytes(html);
+            var fileName = $"candidats_acceptes_{DateTime.Now:yyyyMMdd}.html";
+            return File(bytes, "text/html", fileName);
+        }
+
         // ================= LISTE DES POSTES =================
         public IActionResult Postes(string? search, int page = 1)
         {
@@ -292,9 +369,9 @@ namespace Administration.Controllers
 
                 TempData["Success"] = "Poste supprimé avec succès.";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                TempData["Error"] = "Erreur lors de la suppression du poste.";
+                TempData["Error"] = $"Erreur lors de la suppression du poste: {ex.Message}";
             }
 
             return RedirectToAction("Postes");
@@ -388,45 +465,19 @@ namespace Administration.Controllers
             return View("~/Views/Admin/CvResult.cshtml", match);
         }
 
-        // ================= ACCEPTER / REFUSER CANDIDATURE =================
+        // ================= ACCEPTER / REFUSER CANDIDATURE (RH) =================
+        // Note: This uses existing CV status fields and stored Match scores.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult AccepterCandidature(int cvId, int offreId)
         {
-            var cv = _context.Cvs.Include(c => c.Utilisateur).Include(c => c.Offre).FirstOrDefault(c => c.Id == cvId);
+            var cv = _context.Cvs.FirstOrDefault(c => c.Id == cvId && c.OffreId == offreId);
             if (cv == null) return NotFound();
 
             cv.Statut = "Accepte";
             _context.SaveChanges();
 
-            // Notification au candidat
-            _context.Notifications.Add(new Notification
-            {
-                UtilisateurId = cv.UtilisateurId,
-                Titre = "Candidature acceptée",
-                Message = "Votre candidature a été acceptée. Veuillez attendre, vous serez contacté via votre email ou numéro de téléphone.",
-                Type = "Success",
-                RelatedCvId = cv.Id,
-                RelatedOffreId = offreId
-            });
-
-            // Notification aux RH
-            var rhs = _context.Utilisateurs.Where(u => u.Role == "RH").ToList();
-            foreach (var rh in rhs)
-            {
-                _context.Notifications.Add(new Notification
-                {
-                    UtilisateurId = rh.Id,
-                    Titre = "Candidature acceptée",
-                    Message = $"Une candidature pour le poste '{cv.Offre?.Titre}' a été acceptée.",
-                    Type = "Info",
-                    RelatedCvId = cv.Id,
-                    RelatedOffreId = offreId
-                });
-            }
-
-            _context.SaveChanges();
-            TempData["Success"] = "Candidature acceptée avec succès.";
+            TempData["Success"] = "Candidature acceptée.";
             return RedirectToAction("DetailPoste", new { id = offreId });
         }
 
@@ -434,25 +485,13 @@ namespace Administration.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult RefuserCandidature(int cvId, int offreId)
         {
-            var cv = _context.Cvs.Include(c => c.Utilisateur).Include(c => c.Offre).FirstOrDefault(c => c.Id == cvId);
+            var cv = _context.Cvs.FirstOrDefault(c => c.Id == cvId && c.OffreId == offreId);
             if (cv == null) return NotFound();
 
             cv.Statut = "Refuse";
             _context.SaveChanges();
 
-            // Notification au candidat
-            _context.Notifications.Add(new Notification
-            {
-                UtilisateurId = cv.UtilisateurId,
-                Titre = "Candidature refusée",
-                Message = "Votre candidature a été refusée. Nous vous remercions pour votre intérêt.",
-                Type = "Danger",
-                RelatedCvId = cv.Id,
-                RelatedOffreId = offreId
-            });
-            _context.SaveChanges();
-
-            TempData["Success"] = "Candidature refusée avec succès.";
+            TempData["Success"] = "Candidature refusée.";
             return RedirectToAction("DetailPoste", new { id = offreId });
         }
 

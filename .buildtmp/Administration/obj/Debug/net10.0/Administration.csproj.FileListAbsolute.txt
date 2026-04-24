@@ -1,0 +1,9 @@
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\Administration.csproj.AssemblyReference.cache
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\rpswa.dswa.cache.json
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\Administration.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\Administration.AssemblyInfoInputs.cache
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\Administration.AssemblyInfo.cs
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\Administration.csproj.CoreCompileInputs.cache
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\Administration.MvcApplicationPartsAssemblyInfo.cache
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\Administration.RazorAssemblyInfo.cache
+c:\Users\bennj\Downloads\CVAnalyzer-PFE\.buildtmp\Administration\obj\Debug\net10.0\Administration.RazorAssemblyInfo.cs

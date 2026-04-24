@@ -226,6 +226,54 @@ public class OffreController : Controller
         _context.DonneesCvs.Add(newDonneesCv);
         await _context.SaveChangesAsync();
 
+        // Store extracted competences in structured tables (Competences + CvCompetences)
+        var competenceNames = CvDataExtractionService.ExtractCompetenceNames(competences);
+        if (competenceNames.Count > 0)
+        {
+            var wanted = competenceNames
+                .Select(n => n.Trim())
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .ToList();
+
+            var wantedLower = wanted.Select(n => n.ToLower()).ToList();
+
+            // Load existing competences (case-insensitive)
+            var existing = await _context.Competences
+                .Where(c => wantedLower.Contains(c.Nom.ToLower()))
+                .ToListAsync();
+
+            foreach (var name in wanted)
+            {
+                var comp = existing.FirstOrDefault(c => string.Equals(c.Nom, name, StringComparison.OrdinalIgnoreCase));
+                if (comp == null)
+                {
+                    comp = new Competence { Nom = name };
+                    _context.Competences.Add(comp);
+                    existing.Add(comp);
+                }
+            }
+
+            // Save new competences first to get IDs
+            await _context.SaveChangesAsync();
+
+            // Load existing links once, then add missing links
+            var existingLinks = await _context.CvCompetences
+                .Where(cc => cc.CvId == newCv.Id)
+                .Select(cc => cc.CompetenceId)
+                .ToListAsync();
+            var existingLinkSet = existingLinks.ToHashSet();
+
+            foreach (var comp in existing)
+            {
+                if (!existingLinkSet.Contains(comp.Id))
+                {
+                    _context.CvCompetences.Add(new CvCompetence { CvId = newCv.Id, CompetenceId = comp.Id });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
         // Extract structured experiences and diplomas
         var experiences = CvDataExtractionService.ExtractExperiences(newCv.Id, experience);
         var diplomes = CvDataExtractionService.ExtractDiplomes(newCv.Id, niveauEducation, autresInfos);

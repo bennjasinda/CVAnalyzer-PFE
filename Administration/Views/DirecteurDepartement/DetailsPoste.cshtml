@@ -712,6 +712,13 @@
     </div>
 
     <div class="stats-row">
+        @{
+            var allScores = (Model.Cvs ?? new List<Administration.Models.Cv>())
+                .Select(cv => cv.Matches?.OrderByDescending(m => m.GlobalScore).FirstOrDefault()?.GlobalScore ?? 0f)
+                .ToList();
+            var avgScore = allScores.Count > 0 ? allScores.Average() : 0d;
+            var bestScore = allScores.Count > 0 ? allScores.Max() : 0f;
+        }
         <div class="stat-card">
             <div class="stat-icon icon-orange">
                 <i class="bi bi-people"></i>
@@ -746,6 +753,24 @@
             <div class="stat-info">
                 <div class="stat-value">@Model.Experience</div>
                 <div class="stat-label">Années d'expérience</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-green">
+                <i class="bi bi-bar-chart"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">@avgScore.ToString("F0")%</div>
+                <div class="stat-label">Score moyen</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-purple">
+                <i class="bi bi-trophy"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">@bestScore.ToString("F0")%</div>
+                <div class="stat-label">Meilleur score</div>
             </div>
         </div>
     </div>
@@ -823,7 +848,7 @@
         <div class="candidates-header">
             <div class="candidates-header-left">
                 <i class="bi bi-people" style="color: #f59e0b; font-size: 18px;"></i>
-                <h5>Candidats ayant postulé</h5>
+                <h5>Top candidats validés </h5>
                 <span class="candidates-count">@(Model.Cvs?.Count() ?? 0)</span>
             </div>
             <div class="candidates-search">
@@ -832,7 +857,15 @@
             </div>
         </div>
 
-        @if (Model.Cvs != null && Model.Cvs.Any())
+        @{
+            var validated = (Model.Cvs ?? new List<Administration.Models.Cv>())
+                .Where(cv => cv.Statut == "Accepte")
+                .OrderByDescending(cv => cv.Matches?.OrderByDescending(m => m.GlobalScore).FirstOrDefault()?.GlobalScore ?? 0f)
+                .Take(4)
+                .ToList();
+        }
+
+        @if (validated.Any())
         {
             <table class="candidates-table" id="candidatesTable">
                 <thead>
@@ -841,11 +874,11 @@
                         <th>Email</th>
                         <th style="width: 100px;">Score</th>
                         <th style="width: 120px;">Statut</th>
-                        <th class="text-end">Actions</th>
+                        <th class="text-end">Détails</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var cv in ViewBag.PagedCvs as List<Administration.Models.Cv> ?? new List<Administration.Models.Cv>())
+                    @foreach (var cv in validated)
                     {
                         var match = cv.Matches.FirstOrDefault();
                         var score = match?.GlobalScore ?? 0;
@@ -887,14 +920,78 @@
                                        class="cand-btn btn-view" title="Voir l'analyse">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if (cv.Statut == "En attente")
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="no-candidates">
+                <i class="bi bi-inbox"></i>
+                <h6>Aucun candidat</h6>
+                <p>Aucune candidature validée par RH pour le moment.</p>
+            </div>
+        }
+    </div>
+
+    <div class="candidates-section">
+        <div class="candidates-header">
+            <div class="candidates-header-left">
+                <i class="bi bi-shield-check" style="color: #f59e0b; font-size: 18px;"></i>
+                <h5>Décision finale </h5>
+                <span class="candidates-count">@(Model.Cvs?.Count() ?? 0)</span>
+            </div>
+        </div>
+
+        @if (Model.Cvs != null && Model.Cvs.Any())
+        {
+            <table class="candidates-table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Candidat</th>
+                        <th>Email</th>
+                        <th style="width: 100px;">Score</th>
+                        <th style="width: 140px;">Décision Directeur</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cv in (Model.Cvs ?? new List<Administration.Models.Cv>())
+                        .OrderByDescending(c => c.Matches?.OrderByDescending(m => m.GlobalScore).FirstOrDefault()?.GlobalScore ?? 0f))
+                    {
+                        var match = cv.Matches.FirstOrDefault();
+                        var score = match?.GlobalScore ?? 0;
+                        var scoreClass = score >= 80 ? "high" : (score >= 70 ? "medium" : "low");
+                        var candidateName = cv.DonneesCv?.NomCandidat ?? "Candidat";
+                        var candidateEmail = cv.DonneesCv?.Email ?? "—";
+                        var decision = cv.Statut == "Accepte" ? "Validé" : (cv.Statut == "Refuse" ? "Rejeté" : "En attente");
+
+                        <tr>
+                            <td>@candidateName</td>
+                            <td>@candidateEmail</td>
+                            <td>
+                                <span class="score-badge @scoreClass">
+                                    <i class="bi bi-star-fill" style="font-size: 10px;"></i> @score.ToString("F0")%
+                                </span>
+                            </td>
+                            <td>@decision</td>
+                            <td class="text-end">
+                                <div class="candidate-actions">
+                                    <a asp-action="CvResult" asp-route-offreId="@Model.Id" asp-route-cvId="@cv.Id" 
+                                       class="cand-btn btn-view" title="Voir l'analyse">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    @if (cv.Statut == "En attente" || cv.Statut == "Accepte")
                                     {
                                         <form asp-action="AccepterCandidature" method="post" style="display: inline;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="cvId" value="@cv.Id" />
                                             <input type="hidden" name="offreId" value="@Model.Id" />
-                                            <button type="submit" class="cand-btn btn-accept" title="Accepter la candidature"
-                                                    onclick="return confirm('Accepter cette candidature ?')">
+                                            <button type="submit" class="cand-btn btn-accept" title="Valider définitivement"
+                                                    onclick="return confirm('Valider définitivement ce candidat ?')">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                         </form>
@@ -902,8 +999,8 @@
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="cvId" value="@cv.Id" />
                                             <input type="hidden" name="offreId" value="@Model.Id" />
-                                            <button type="submit" class="cand-btn btn-reject" title="Refuser la candidature"
-                                                    onclick="return confirm('Refuser cette candidature ?')">
+                                            <button type="submit" class="cand-btn btn-reject" title="Rejeter"
+                                                    onclick="return confirm('Rejeter ce candidat ?')">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
                                         </form>
@@ -914,20 +1011,6 @@
                     }
                 </tbody>
             </table>
-
-            <div class="candidates-footer">
-                <div class="candidates-footer-info">
-                    @{
-                        var pagedCvsDD = ViewBag.PagedCvs as List<Administration.Models.Cv> ?? new List<Administration.Models.Cv>();
-                        var paginationDD = ViewBag.Pagination as Administration.ViewModels.PaginationViewModel;
-                        var startItem = pagedCvsDD.Any() ? ((paginationDD?.CurrentPage ?? 1) - 1) * (paginationDD?.PageSize ?? 8) + 1 : 0;
-                        var endItem = startItem + pagedCvsDD.Count - 1;
-                        var totalItems = paginationDD?.TotalItems ?? 0;
-                    }
-                    Affichage de <strong>@startItem à @endItem</strong> sur <strong>@totalItems</strong> candidats
-                </div>
-                @await Html.PartialAsync("_Pagination", ViewBag.Pagination as Administration.ViewModels.PaginationViewModel)
-            </div>
         }
         else
         {

@@ -23,6 +23,16 @@ public static class OffreDeletionHelper
         var cvIds = context.Cvs.AsNoTracking().Where(c => c.OffreId == offreId).Select(c => c.Id).ToList();
         if (cvIds.Count > 0)
         {
+            // Delete CvExperiences
+            var experiences = context.CvExperiences.Where(ce => cvIds.Contains(ce.CvId)).ToList();
+            if (experiences.Count > 0)
+                context.CvExperiences.RemoveRange(experiences);
+
+            // Delete CvDiplomes
+            var diplomes = context.CvDiplomes.Where(cd => cvIds.Contains(cd.CvId)).ToList();
+            if (diplomes.Count > 0)
+                context.CvDiplomes.RemoveRange(diplomes);
+
             var comps = context.CvCompetences.Where(cc => cvIds.Contains(cc.CvId)).ToList();
             if (comps.Count > 0)
                 context.CvCompetences.RemoveRange(comps);

@@ -833,8 +833,8 @@
         <div class="candidates-header">
             <div class="candidates-header-left">
                 <i class="bi bi-people" style="color: #6366f1; font-size: 18px;"></i>
-                <h5>Candidats adéquats</h5>
-                <span class="candidates-count">@Model.Candidats.Count()</span>
+                <h5>Top Candidats</h5>
+                <span class="candidates-count">@Math.Min(4, Model.Candidats.Count())</span>
             </div>
             <div class="candidates-search">
                 <i class="bi bi-search"></i>
@@ -847,15 +847,22 @@
             <table class="candidates-table" id="candidatesTable">
                 <thead>
                     <tr>
-                        <th style="width: 25%;">Candidat</th>
-                        <th>Email</th>
+                        <th style="width: 22%;">Candidat</th>
                         <th style="width: 100px;">Score</th>
-                        <th style="width: 120px;">Statut</th>
-                        <th class="text-end">Actions</th>
+                        <th style="width: 110px;">Diplôme</th>
+                        <th style="width: 120px;">Expérience</th>
+                        <th style="width: 160px;">Compétences principales</th>
+                        <th class="text-end">Détails</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var candidat in Model.Candidats)
+                    @{
+                        var top4 = Model.Candidats
+                            .OrderByDescending(c => scoreByUserId.TryGetValue(c.Id, out var sc) ? sc : 0f)
+                            .Take(4)
+                            .ToList();
+                    }
+                    @foreach (var candidat in top4)
                     {
                         var avatarColors = new[] { "#6366f1", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#14b8a6", "#ec4899" };
                         var colorIndex = (candidat.Id * 7) % avatarColors.Length;
@@ -865,10 +872,17 @@
                         var score = scoreByUserId.TryGetValue(candidat.Id, out var s) ? s : 0;
                         var scoreClass = score >= 80 ? "high" : (score >= 70 ? "medium" : "low");
                         var cvId = cvByUserId.TryGetValue(candidat.Id, out var userCvId) ? userCvId : 0;
-                        var statusByUserId = ViewBag.StatusByUserId as Dictionary<int, string> ?? new Dictionary<int, string>();
-                        var statut = statusByUserId.TryGetValue(candidat.Id, out var st) ? st : "En attente";
-                        var statusClass = statut == "Accepte" ? "status-active" : (statut == "Refuse" ? "status-inactive" : "");
-                        var statusLabel = statut == "Accepte" ? "Accepté" : (statut == "Refuse" ? "Refusé" : "En attente");
+                        var cv = cvId > 0 ? Model.Offre.Cvs?.FirstOrDefault(x => x.Id == cvId) : null;
+                        var match = cv?.Matches?.OrderByDescending(m => m.GlobalScore).FirstOrDefault();
+                        var diplScore = match?.DiplomeScore ?? 0f;
+                        var expScore = match?.ExperienceScore ?? 0f;
+                        var compScore = match?.CompetenceScore ?? 0f;
+                        var skillsText = cv?.DonneesCv?.Competences;
+                        var skillsPreview = !string.IsNullOrWhiteSpace(skillsText)
+                            ? string.Join(", ",
+                                skillsText.Split(new[] { ',', ';', '|', '/', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                    .Take(3))
+                            : "—";
 
                         <tr>
                             <td>
@@ -879,16 +893,19 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>@candidat.Email</td>
                             <td>
                                 <span class="score-badge @scoreClass">
-                                    <i class="bi bi-star-fill" style="font-size: 10px;"></i> @score%
+                                    <i class="bi bi-star-fill" style="font-size: 10px;"></i> @score.ToString("F0")%
                                 </span>
                             </td>
                             <td>
-                                <span class="status-pill @(statut == "Accepte" ? "status-active" : (statut == "Refuse" ? "status-inactive" : ""))">
-                                    @statusLabel
-                                </span>
+                                @diplScore.ToString("F0")%
+                            </td>
+                            <td>
+                                @expScore.ToString("F0")%
+                            </td>
+                            <td title="@skillsText">
+                                @skillsPreview
                             </td>
                             <td>
                                 <div class="candidate-actions">
@@ -903,30 +920,6 @@
                                         <a asp-action="ProfilCandidat" asp-route-id="@candidat.Id" class="cand-btn btn-view" title="Voir profil">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                    }
-                                    <a href="mailto:@candidat.Email" class="cand-btn btn-download" title="Contacter">
-                                        <i class="bi bi-envelope"></i>
-                                    </a>
-                                    @if (cvId > 0 && statut == "En attente")
-                                    {
-                                        <form asp-action="AccepterCandidature" method="post" style="display: inline;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="cvId" value="@cvId" />
-                                            <input type="hidden" name="offreId" value="@Model.Offre.Id" />
-                                            <button type="submit" class="cand-btn btn-accept" title="Accepter"
-                                                    onclick="return confirm('Accepter cette candidature ?')">
-                                                <i class="bi bi-check-lg"></i>
-                                            </button>
-                                        </form>
-                                        <form asp-action="RefuserCandidature" method="post" style="display: inline;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="cvId" value="@cvId" />
-                                            <input type="hidden" name="offreId" value="@Model.Offre.Id" />
-                                            <button type="submit" class="cand-btn btn-delete" title="Refuser"
-                                                    onclick="return confirm('Refuser cette candidature ?')">
-                                                <i class="bi bi-x-lg"></i>
-                                            </button>
-                                        </form>
                                     }
                                     @if (User.IsInRole("Admin"))
                                     {
@@ -972,7 +965,7 @@
         <div class="candidates-header">
             <div class="candidates-header-left">
                 <i class="bi bi-people" style="color: #6366f1; font-size: 18px;"></i>
-                <h5>Candidats ayant postulé</h5>
+                <h5>Tous les candidats</h5>
                 <span class="candidates-count">@Model.Candidats.Count()</span>
             </div>
             <div class="candidates-search">
@@ -989,7 +982,7 @@
                         <th style="width: 25%;">Candidat</th>
                         <th>Email</th>
                         <th style="width: 100px;">Score</th>
-                        <th>Date inscription</th>
+                        <th style="width: 120px;">Statut</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -1001,12 +994,13 @@
                         var color = avatarColors[colorIndex];
                         var initial = candidat.NomUtilisateur?.Length > 0 ? candidat.NomUtilisateur[0].ToString().ToUpper() : "?";
                         
-                        var isActive = candidat.IsActive;
-                        var statusClass = isActive ? "status-active" : "status-inactive";
-                        
                         var score2 = scoreByUserId.TryGetValue(candidat.Id, out var s2) ? s2 : 0;
                         var scoreClass2 = score2 >= 80 ? "high" : (score2 >= 70 ? "medium" : "low");
                         var cvId2 = cvByUserId.TryGetValue(candidat.Id, out var userCvId2) ? userCvId2 : 0;
+                        var statusByUserId2 = ViewBag.StatusByUserId as Dictionary<int, string> ?? new Dictionary<int, string>();
+                        var statut2 = statusByUserId2.TryGetValue(candidat.Id, out var st2) ? st2 : "En attente";
+                        var statusLabel2 = statut2 == "Accepte" ? "Accepté" : (statut2 == "Refuse" ? "Refusé" : "En attente");
+                        var statusPillClass2 = statut2 == "Accepte" ? "status-active" : (statut2 == "Refuse" ? "status-inactive" : "");
 
                         <tr>
                             <td>
@@ -1021,10 +1015,14 @@
                             <td>@candidat.Email</td>
                             <td>
                                 <span class="score-badge @scoreClass2">
-                                    <i class="bi bi-star-fill" style="font-size: 10px;"></i> @score2%
+                                    <i class="bi bi-star-fill" style="font-size: 10px;"></i> @score2.ToString("F0")%
                                 </span>
                             </td>
-                            <td>@candidat.DateCreation.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <span class="status-pill @statusPillClass2">
+                                    @statusLabel2
+                                </span>
+                            </td>
                             
                             <td>
                                 <div class="candidate-actions">
@@ -1043,6 +1041,28 @@
                                     <a href="mailto:@candidat.Email" class="cand-btn btn-download" title="Contacter">
                                         <i class="bi bi-envelope"></i>
                                     </a>
+
+                                    @if (cvId2 > 0 && statut2 == "En attente")
+                                    {
+                                        <form asp-action="AccepterCandidature" method="post" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="cvId" value="@cvId2" />
+                                            <input type="hidden" name="offreId" value="@Model.Offre.Id" />
+                                            <button type="submit" class="cand-btn btn-accept" title="Accepter"
+                                                    onclick="return confirm('Accepter cette candidature ?')">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="RefuserCandidature" method="post" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="cvId" value="@cvId2" />
+                                            <input type="hidden" name="offreId" value="@Model.Offre.Id" />
+                                            <button type="submit" class="cand-btn btn-delete" title="Refuser"
+                                                    onclick="return confirm('Refuser cette candidature ?')">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
                                     
                                     @if (User.IsInRole("Admin"))
                                     {

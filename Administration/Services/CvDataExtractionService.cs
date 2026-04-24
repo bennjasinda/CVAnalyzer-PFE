@@ -9,6 +9,27 @@ namespace Administration.Services
     public class CvDataExtractionService
     {
         /// <summary>
+        /// Normalize and split extracted skills/competences into a list of names.
+        /// Input comes from Python extraction output (string or list joined as string).
+        /// </summary>
+        public static List<string> ExtractCompetenceNames(string? competencesText)
+        {
+            if (string.IsNullOrWhiteSpace(competencesText))
+                return new List<string>();
+
+            var parts = competencesText.Split(
+                new[] { ',', ';', '|', '/', '\n', '\r', '\t' },
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            );
+
+            return parts
+                .Select(p => Regex.Replace(p.Trim(), @"\s+", " "))
+                .Where(p => p.Length > 1)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        /// <summary>
         /// Extract and store experiences from the CV data
         /// </summary>
         public static List<CvExperience> ExtractExperiences(int cvId, string? experienceText)
